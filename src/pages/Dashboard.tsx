@@ -92,20 +92,22 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Consultas</h1>
-        <p className="text-muted-foreground">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
+          Consultas
+        </h1>
+        <p className="text-muted-foreground text-lg">
           Pesquise dados de empresas e gerencie suas consultas
         </p>
       </div>
 
       {/* Search Form */}
-      <Card className="shadow-md">
+      <Card className="shadow-card border-0 bg-gradient-card">
         <CardHeader>
-          <CardTitle>Nova Consulta</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl">Nova Consulta</CardTitle>
+          <CardDescription className="text-base">
             Cada busca consome 15 tokens do seu saldo
           </CardDescription>
         </CardHeader>
@@ -113,39 +115,41 @@ const Dashboard = () => {
           <form onSubmit={handleSearch} className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria</Label>
+                <Label htmlFor="category" className="text-base">Categoria</Label>
                 <Input
                   id="category"
                   placeholder="Ex: restaurante, academia, farmácia"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
+                  className="h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location">Localização</Label>
+                <Label htmlFor="location" className="text-base">Localização</Label>
                 <Input
                   id="location"
                   placeholder="Ex: São Paulo, Rio de Janeiro"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
+                  className="h-11"
                   required
                 />
               </div>
             </div>
             <Button
               type="submit"
-              className="w-full md:w-auto"
+              className="w-full md:w-auto h-11 px-8 shadow-lg hover:shadow-glow transition-all"
               disabled={isSearching}
             >
               {isSearching ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Buscando...
                 </>
               ) : (
                 <>
-                  <Search className="mr-2 h-4 w-4" />
+                  <Search className="mr-2 h-5 w-5" />
                   Buscar Empresas
                 </>
               )}
@@ -155,7 +159,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Consultas List */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-semibold">
             Minhas Consultas ({filteredConsultas.length})
@@ -164,7 +168,7 @@ const Dashboard = () => {
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] h-11">
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Filtrar categoria" />
               </SelectTrigger>
@@ -177,7 +181,7 @@ const Dashboard = () => {
             </Select>
 
             <Select value={filterDate} onValueChange={setFilterDate}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] h-11">
                 <Calendar className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Filtrar período" />
               </SelectTrigger>
@@ -192,24 +196,25 @@ const Dashboard = () => {
         </div>
 
         {filteredConsultas.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhuma consulta encontrada com os filtros selecionados.
+          <Card className="shadow-card border-0">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Search className="mx-auto h-12 w-12 opacity-20 mb-4" />
+              <p className="text-lg">Nenhuma consulta encontrada com os filtros selecionados.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
             {filteredConsultas.map((consulta) => (
-              <Card key={consulta.id} className="shadow-sm">
+              <Card key={consulta.id} className="shadow-card hover:shadow-lg transition-all duration-300 border-0 bg-gradient-card group">
                 <CardContent className="pt-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
-                        <Badge variant="outline" className="gap-1">
+                        <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/5">
                           <Tag className="h-3 w-3" />
                           {consulta.category}
                         </Badge>
-                        <Badge variant="outline" className="gap-1">
+                        <Badge variant="outline" className="gap-1 border-accent/20 bg-accent/5">
                           <MapPin className="h-3 w-3" />
                           {consulta.location}
                         </Badge>
@@ -219,7 +224,7 @@ const Dashboard = () => {
                           <Calendar className="h-4 w-4" />
                           {new Date(consulta.date).toLocaleDateString("pt-BR")}
                         </div>
-                        <div>
+                        <div className="font-medium">
                           {consulta.resultsCount} resultados
                         </div>
                       </div>
@@ -228,15 +233,14 @@ const Dashboard = () => {
                       <Button
                         onClick={() => handleViewDetails(consulta.id)}
                         variant="outline"
-                        className="w-full sm:w-auto"
+                        className="w-full sm:w-auto group-hover:border-primary/30 transition-colors"
                       >
                         <ExternalLink className="mr-2 h-4 w-4" />
                         Ver Detalhes
                       </Button>
                       <Button
                         onClick={() => handleDownload(consulta.id)}
-                        variant="outline"
-                        className="w-full sm:w-auto"
+                        className="w-full sm:w-auto shadow-md hover:shadow-glow transition-all"
                       >
                         <Download className="mr-2 h-4 w-4" />
                         Download

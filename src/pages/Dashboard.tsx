@@ -4,14 +4,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Loader2, MapPin, Star } from "lucide-react";
+import { Search, Download, Loader2, Calendar, MapPin, Tag, ExternalLink, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterDate, setFilterDate] = useState("all");
+
+  // Mock data - will be replaced with real data from backend
+  const consultas = [
+    {
+      id: 1,
+      date: "2024-03-15",
+      category: "Restaurante",
+      location: "São Paulo, SP",
+      resultsCount: 25,
+      tokensUsed: 15,
+    },
+    {
+      id: 2,
+      date: "2024-03-14",
+      category: "Academia",
+      location: "Rio de Janeiro, RJ",
+      resultsCount: 18,
+      tokensUsed: 15,
+    },
+    {
+      id: 3,
+      date: "2024-03-13",
+      category: "Farmácia",
+      location: "Belo Horizonte, MG",
+      resultsCount: 32,
+      tokensUsed: 15,
+    },
+  ];
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,49 +51,53 @@ const Dashboard = () => {
 
     // Mock search - simulate API call
     setTimeout(() => {
-      const mockResults = [
-        {
-          id: 1,
-          name: "Restaurante Exemplo 1",
-          address: "Rua das Flores, 123 - São Paulo, SP",
-          rating: 4.5,
-          category: category,
-          phone: "(11) 98765-4321",
-        },
-        {
-          id: 2,
-          name: "Restaurante Exemplo 2",
-          address: "Av. Paulista, 456 - São Paulo, SP",
-          rating: 4.8,
-          category: category,
-          phone: "(11) 98765-1234",
-        },
-        {
-          id: 3,
-          name: "Restaurante Exemplo 3",
-          address: "Rua Augusta, 789 - São Paulo, SP",
-          rating: 4.2,
-          category: category,
-          phone: "(11) 98765-5678",
-        },
-      ];
-      setResults(mockResults);
       setIsSearching(false);
       toast.success("Busca concluída! 15 tokens debitados.");
     }, 2000);
   };
 
-  const handleExport = () => {
-    toast.success("Relatório exportado com sucesso!");
+  const handleDownload = (consultaId: number) => {
+    toast.success("Download iniciado!");
   };
+
+  const handleViewDetails = (consultaId: number) => {
+    navigate(`/consulta/${consultaId}`);
+  };
+
+  // Filter consultas based on selected filters
+  const filteredConsultas = consultas.filter((consulta) => {
+    if (filterCategory !== "all" && consulta.category !== filterCategory) {
+      return false;
+    }
+    if (filterDate !== "all") {
+      const consultaDate = new Date(consulta.date);
+      const today = new Date();
+      if (filterDate === "today" && consultaDate.toDateString() !== today.toDateString()) {
+        return false;
+      }
+      if (filterDate === "week") {
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (consultaDate < weekAgo) {
+          return false;
+        }
+      }
+      if (filterDate === "month") {
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (consultaDate < monthAgo) {
+          return false;
+        }
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Consultas</h1>
         <p className="text-muted-foreground">
-          Pesquise dados de empresas por categoria e localização
+          Pesquise dados de empresas e gerencie suas consultas
         </p>
       </div>
 
@@ -118,54 +154,101 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">
-              Resultados ({results.length})
-            </h2>
-            <Button onClick={handleExport} variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Exportar CSV
-            </Button>
-          </div>
+      {/* Consultas List */}
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-2xl font-semibold">
+            Minhas Consultas ({filteredConsultas.length})
+          </h2>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Filtrar categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                <SelectItem value="Restaurante">Restaurante</SelectItem>
+                <SelectItem value="Academia">Academia</SelectItem>
+                <SelectItem value="Farmácia">Farmácia</SelectItem>
+              </SelectContent>
+            </Select>
 
+            <Select value={filterDate} onValueChange={setFilterDate}>
+              <SelectTrigger className="w-[180px]">
+                <Calendar className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Filtrar período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos períodos</SelectItem>
+                <SelectItem value="today">Hoje</SelectItem>
+                <SelectItem value="week">Última semana</SelectItem>
+                <SelectItem value="month">Último mês</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {filteredConsultas.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Nenhuma consulta encontrada com os filtros selecionados.
+            </CardContent>
+          </Card>
+        ) : (
           <div className="grid gap-4">
-            {results.map((result) => (
-              <Card key={result.id} className="shadow-sm">
+            {filteredConsultas.map((consulta) => (
+              <Card key={consulta.id} className="shadow-sm">
                 <CardContent className="pt-6">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold">{result.name}</h3>
-                        <Badge variant="secondary" className="mt-1">
-                          {result.category}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Badge variant="outline" className="gap-1">
+                          <Tag className="h-3 w-3" />
+                          {consulta.category}
+                        </Badge>
+                        <Badge variant="outline" className="gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {consulta.location}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1">
-                        <Star className="h-4 w-4 fill-primary text-primary" />
-                        <span className="font-medium text-primary">
-                          {result.rating}
-                        </span>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(consulta.date).toLocaleDateString("pt-BR")}
+                        </div>
+                        <div>
+                          {consulta.resultsCount} resultados
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        {result.address}
-                      </div>
-                      <div className="font-medium text-foreground">
-                        {result.phone}
-                      </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        onClick={() => handleViewDetails(consulta.id)}
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Ver Detalhes
+                      </Button>
+                      <Button
+                        onClick={() => handleDownload(consulta.id)}
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

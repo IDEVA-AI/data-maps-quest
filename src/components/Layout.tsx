@@ -13,7 +13,7 @@ const Layout = ({ children }: LayoutProps) => {
   const userTokens = 15; // Mock - will be replaced with real data
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: Search },
+    { name: "Consultas", href: "/", icon: Search },
     { name: "Histórico", href: "/history", icon: History },
     { name: "Planos", href: "/pricing", icon: CreditCard },
   ];

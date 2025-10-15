@@ -6,9 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
-import Pricing from "./pages/Pricing";
+import TokenManagement from "./pages/TokenManagement";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import RegisterWithPlan from "./pages/RegisterWithPlan";
+import LandingPage from "./pages/LandingPage";
 import ConsultaDetalhes from "./pages/ConsultaDetalhes";
 import NotFound from "./pages/NotFound";
 
@@ -21,12 +23,14 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/home" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register-plan" element={<RegisterWithPlan />} />
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/consulta/:id" element={<Layout><ConsultaDetalhes /></Layout>} />
           <Route path="/history" element={<Layout><History /></Layout>} />
-          <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+          <Route path="/tokens" element={<Layout><TokenManagement /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

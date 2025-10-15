@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Loader2, Calendar, MapPin, Tag, ExternalLink, Filter } from "lucide-react";
+import { Search, Download, Loader2, Calendar, MapPin, Tag, ExternalLink, Filter, Zap, TrendingUp, Target } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -91,6 +91,12 @@ const Dashboard = () => {
     return true;
   });
 
+  // Calculate metrics
+  const userTokens = 15; // Mock - will be replaced with real data
+  const totalConsultas = consultas.length;
+  const totalSpent = totalConsultas * 15;
+  const totalLeads = consultas.reduce((sum, c) => sum + c.resultsCount, 0);
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -101,6 +107,73 @@ const Dashboard = () => {
         <p className="text-muted-foreground text-lg">
           Pesquise dados de empresas e gerencie suas consultas
         </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Saldo de Tokens</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {userTokens}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Zap className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Consultas</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalConsultas}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Search className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Gasto</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalSpent}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <TrendingUp className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Custo Médio por Lead</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalLeads > 0 ? (totalSpent / totalLeads).toFixed(1) : "0"}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Target className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search Form */}

@@ -18,7 +18,7 @@ import { Link } from "react-router-dom";
 const items = [
   { title: "Consultas", url: "/", icon: Search },
   { title: "Histórico", url: "/history", icon: History },
-  { title: "Planos", url: "/pricing", icon: CreditCard },
+  { title: "Gestão de Tokens", url: "/tokens", icon: CreditCard },
 ];
 
 export function AppSidebar() {
@@ -84,7 +84,7 @@ export function AppSidebar() {
                 className="mt-3 w-full"
                 asChild
               >
-                <Link to="/pricing">Comprar Mais</Link>
+                <Link to="/tokens">Comprar Mais</Link>
               </Button>
             </div>
 

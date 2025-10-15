@@ -1,13 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, MapPin, Star, Phone, Mail, Globe, Building } from "lucide-react";
+import { ArrowLeft, Download, MapPin, Star, Phone, Mail, Globe, Building, BarChart3 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 
 const ConsultaDetalhes = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [phoneFilter, setPhoneFilter] = useState("all");
+  const [emailFilter, setEmailFilter] = useState("all");
+  const [websiteFilter, setWebsiteFilter] = useState("all");
 
   // Mock data - will be replaced with real data from backend
   const consulta = {
@@ -59,6 +64,23 @@ const ConsultaDetalhes = () => {
     toast.success("Download iniciado!");
   };
 
+  // Filter results based on selected filters
+  const filteredResults = consulta.results.filter((result) => {
+    if (phoneFilter === "possui" && !result.numero) return false;
+    if (phoneFilter === "vazio" && result.numero) return false;
+    if (emailFilter === "possui" && !result.email) return false;
+    if (emailFilter === "vazio" && result.email) return false;
+    if (websiteFilter === "possui" && !result.site) return false;
+    if (websiteFilter === "vazio" && result.site) return false;
+    return true;
+  });
+
+  // Calculate statistics
+  const totalEstabelecimentos = consulta.results.length;
+  const totalTelefones = consulta.results.filter(r => r.numero).length;
+  const totalEmails = consulta.results.filter(r => r.email).length;
+  const totalWebsites = consulta.results.filter(r => r.site).length;
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -89,15 +111,129 @@ const ConsultaDetalhes = () => {
         </Button>
       </div>
 
+      {/* Statistics Module */}
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Estabelecimentos</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalEstabelecimentos}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Building className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Telefones</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalTelefones}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Phone className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total E-mails</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalEmails}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Mail className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Websites</p>
+                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {totalWebsites}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+                <Globe className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Results */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h2 className="text-2xl font-semibold">
-            Resultados ({consulta.results.length})
+            Resultados ({filteredResults.length} de {consulta.results.length})
           </h2>
+
+          {/* Advanced Filters */}
+          <div className="flex flex-wrap gap-3">
+            <Select value={phoneFilter} onValueChange={setPhoneFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <Phone className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Telefone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="possui">Possui</SelectItem>
+                <SelectItem value="vazio">Vazio</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={emailFilter} onValueChange={setEmailFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <Mail className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="E-mail" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="possui">Possui</SelectItem>
+                <SelectItem value="vazio">Vazio</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={websiteFilter} onValueChange={setWebsiteFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <Globe className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Website" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="possui">Possui</SelectItem>
+                <SelectItem value="vazio">Vazio</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {consulta.results.map((result) => (
+        {filteredResults.length === 0 ? (
+          <Card className="shadow-card border-0">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <BarChart3 className="mx-auto h-12 w-12 opacity-20 mb-4" />
+              <p className="text-lg">Nenhum resultado encontrado com os filtros selecionados.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredResults.map((result) => (
           <Card key={result.id} className="shadow-card hover:shadow-lg transition-all duration-300 border-0 bg-gradient-card">
             <CardContent className="pt-6">
               <div className="space-y-6">
@@ -172,7 +308,8 @@ const ConsultaDetalhes = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

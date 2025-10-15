@@ -18,7 +18,7 @@ import { Link } from "react-router-dom";
 const items = [
   { title: "Consultas", url: "/", icon: Search },
   { title: "Histórico", url: "/history", icon: History },
-  { title: "Gestão de Tokens", url: "/tokens", icon: CreditCard },
+  { title: "Recargas", url: "/tokens", icon: CreditCard },
 ];
 
 export function AppSidebar() {

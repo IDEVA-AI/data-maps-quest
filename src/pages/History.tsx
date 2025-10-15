@@ -1,6 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Tag } from "lucide-react";
+import { Calendar, MapPin, Tag, TrendingUp, HelpCircle } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const History = () => {
   // Mock data - will be replaced with real data from backend
@@ -31,8 +38,19 @@ const History = () => {
     },
   ];
 
+  // Mock data - consumo dos últimos 30 dias
+  const consumptionData = [
+    { date: "01/03", tokens: 45 },
+    { date: "05/03", tokens: 60 },
+    { date: "10/03", tokens: 30 },
+    { date: "15/03", tokens: 75 },
+    { date: "20/03", tokens: 50 },
+    { date: "25/03", tokens: 90 },
+    { date: "30/03", tokens: 40 },
+  ];
 
   return (
+    <TooltipProvider>
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="space-y-2">
@@ -56,7 +74,17 @@ const History = () => {
         </Card>
         <Card className="shadow-card border-0 bg-gradient-card hover:shadow-lg transition-all duration-300">
           <CardHeader className="pb-3">
-            <CardDescription className="text-base">Tokens Utilizados</CardDescription>
+            <div className="flex items-center gap-2">
+              <CardDescription className="text-base">Tokens Utilizados</CardDescription>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">Total de tokens consumidos em todas as consultas realizadas. Cada consulta utiliza 15 tokens.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <CardTitle className="text-4xl bg-gradient-primary bg-clip-text text-transparent">
               {searches.reduce((acc, s) => acc + s.tokensUsed, 0)}
             </CardTitle>
@@ -69,6 +97,90 @@ const History = () => {
               {searches.reduce((acc, s) => acc + s.resultsCount, 0)}
             </CardTitle>
           </CardHeader>
+        </Card>
+      </div>
+
+      {/* Análise de Consumo */}
+      <Card className="shadow-card border-0 bg-gradient-card">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+              <TrendingUp className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl">Consumo de Tokens - Últimos 30 Dias</CardTitle>
+              <CardDescription className="text-base mt-1">
+                Acompanhe seu uso diário de tokens
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={consumptionData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="date" 
+                  className="text-sm"
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  className="text-sm"
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <ChartTooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="tokens"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={3}
+                  dot={{ fill: "hsl(var(--primary))", r: 5 }}
+                  activeDot={{ r: 7 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Estatísticas Resumidas */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Total Consumido (30 dias)</p>
+              <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                390 tokens
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Média Diária</p>
+              <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                13 tokens
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card border-0 bg-gradient-card">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Pico de Consumo</p>
+              <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                90 tokens
+              </p>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -106,7 +218,8 @@ const History = () => {
           </Card>
         ))}
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

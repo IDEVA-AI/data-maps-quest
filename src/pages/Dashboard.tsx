@@ -4,8 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Loader2, Calendar, MapPin, Tag, ExternalLink, Filter, Zap, TrendingUp, Target } from "lucide-react";
+import { Search, Download, Loader2, Calendar, MapPin, Tag, ExternalLink, Filter, Zap, TrendingUp, Target, HelpCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -98,7 +104,8 @@ const Dashboard = () => {
   const totalLeads = consultas.reduce((sum, c) => sum + c.resultsCount, 0);
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <TooltipProvider>
+      <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
@@ -163,7 +170,17 @@ const Dashboard = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Custo Médio por Lead</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-muted-foreground">Custo Médio por Lead</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Custo médio em tokens dividido pelo número total de leads encontrados. Ajuda a medir a eficiência das suas consultas.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   {totalLeads > 0 ? (totalSpent / totalLeads).toFixed(1) : "0"}
                 </p>
@@ -326,7 +343,8 @@ const Dashboard = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

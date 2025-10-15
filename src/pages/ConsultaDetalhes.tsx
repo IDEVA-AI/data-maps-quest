@@ -2,8 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, MapPin, Star, Phone, Mail, Globe, Building, BarChart3 } from "lucide-react";
+import { ArrowLeft, Download, MapPin, Star, Phone, Mail, Globe, Building, BarChart3, HelpCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -82,7 +88,8 @@ const ConsultaDetalhes = () => {
   const totalWebsites = consulta.results.filter(r => r.site).length;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <TooltipProvider>
+      <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -117,7 +124,17 @@ const ConsultaDetalhes = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Estabelecimentos</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-muted-foreground">Total Estabelecimentos</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Número total de estabelecimentos encontrados nesta consulta.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   {totalEstabelecimentos}
                 </p>
@@ -311,7 +328,8 @@ const ConsultaDetalhes = () => {
           ))
         )}
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

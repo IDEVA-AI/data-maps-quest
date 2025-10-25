@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Radar, Gift, Check, Zap, Rocket, Crown } from "lucide-react";
+import { Radar, Gift, Check, Zap, Rocket, Crown, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRateLimit } from "@/hooks/useRateLimit";
+import { useAuth } from "@/contexts/AuthContext";
 
 const RegisterWithPlan = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const RegisterWithPlan = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { isInCooldown, remainingTime, startCooldown } = useRateLimit(60);
 
   const plans = [
     {
@@ -43,7 +46,7 @@ const RegisterWithPlan = () => {
     },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -56,11 +59,18 @@ const RegisterWithPlan = () => {
       return;
     }
 
-    // Mock registration - will be replaced with real authentication
-    toast.success("Conta criada com sucesso! Redirecionando para pagamento...");
-    setTimeout(() => {
-      navigate("/");
-    }, 2000);
+    try {
+      // Mock registration - will be replaced with real authentication
+      toast.success("Conta criada com sucesso! Redirecionando para pagamento...");
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error: any) {
+      if (error.message && error.message.includes("aguardar 60 segundos")) {
+        startCooldown(60);
+      }
+      toast.error(error.message || "Erro ao criar conta. Tente novamente.");
+    }
   };
 
   return (
@@ -147,10 +157,26 @@ const RegisterWithPlan = () => {
                 <Button 
                   type="submit" 
                   className="w-full h-11 shadow-lg hover:shadow-glow transition-all text-base"
-                  disabled={!selectedPlan}
+                  disabled={!selectedPlan || isInCooldown}
                 >
-                  {selectedPlan ? "Criar Conta e Pagar" : "Selecione um Plano"}
+                  {isInCooldown ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4" />
+                      Aguarde {remainingTime}s
+                    </>
+                  ) : selectedPlan ? (
+                    "Criar Conta e Pagar"
+                  ) : (
+                    "Selecione um Plano"
+                  )}
                 </Button>
+                
+                {isInCooldown && (
+                  <div className="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                    <Clock className="inline mr-1 h-4 w-4" />
+                    Por segurança, aguarde {remainingTime} segundos antes de tentar novamente.
+                  </div>
+                )}
                 
                 <p className="text-center text-sm text-muted-foreground">
                   Já tem uma conta?{" "}

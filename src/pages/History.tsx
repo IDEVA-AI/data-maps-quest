@@ -1,225 +1,190 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Tag, TrendingUp, HelpCircle } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+import { Search, Calendar, Download, Loader2 } from "lucide-react";
+import { historyService, HistoryEntry, HistoryStats } from "@/services";
+import { toast } from "sonner";
 
 const History = () => {
-  // Mock data - will be replaced with real data from backend
-  const searches = [
-    {
-      id: 1,
-      date: "2024-03-15",
-      category: "Restaurante",
-      location: "São Paulo, SP",
-      resultsCount: 25,
-      tokensUsed: 15,
-    },
-    {
-      id: 2,
-      date: "2024-03-14",
-      category: "Academia",
-      location: "Rio de Janeiro, RJ",
-      resultsCount: 18,
-      tokensUsed: 15,
-    },
-    {
-      id: 3,
-      date: "2024-03-13",
-      category: "Farmácia",
-      location: "Belo Horizonte, MG",
-      resultsCount: 32,
-      tokensUsed: 15,
-    },
-  ];
+  const [searchTerm, setSearchTerm] = useState("");
+  const [historyData, setHistoryData] = useState<HistoryEntry[]>([]);
+  const [stats, setStats] = useState<HistoryStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - consumo dos últimos 30 dias
-  const consumptionData = [
-    { date: "01/03", tokens: 45 },
-    { date: "05/03", tokens: 60 },
-    { date: "10/03", tokens: 30 },
-    { date: "15/03", tokens: 75 },
-    { date: "20/03", tokens: 50 },
-    { date: "25/03", tokens: 90 },
-    { date: "30/03", tokens: 40 },
-  ];
+  // Carregar dados do histórico
+  const loadHistory = async () => {
+    try {
+      setIsLoading(true);
+      const [historyResponse, statsResponse] = await Promise.all([
+        historyService.getHistory({ limit: 50 }),
+        historyService.getHistoryStats()
+      ]);
+
+      if (historyResponse.success && historyResponse.data) {
+        setHistoryData(historyResponse.data);
+      } else {
+        toast.error("Erro ao carregar histórico");
+        setHistoryData([]);
+      }
+
+      if (statsResponse.success && statsResponse.data) {
+        setStats(statsResponse.data);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+      if (error.message?.includes('ERR_CONNECTION_REFUSED') || error.message?.includes('fetch')) {
+        toast.error("Servidor não está disponível. Verifique se o backend está rodando.");
+      } else {
+        toast.error("Erro ao conectar com o servidor: " + error.message);
+      }
+      setHistoryData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const filteredHistory = historyData.filter(item =>
+    item.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusColor = (action: string) => {
+    switch (action) {
+      case "create":
+        return "bg-green-100 text-green-800";
+      case "update":
+        return "bg-blue-100 text-blue-800";
+      case "delete":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getActionLabel = (action: string) => {
+    switch (action) {
+      case "create":
+        return "Criado";
+      case "update":
+        return "Atualizado";
+      case "delete":
+        return "Removido";
+      default:
+        return action;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "consulta":
+        return "Consulta";
+      case "disparo":
+        return "Disparo";
+      case "template":
+        return "Template";
+      case "message":
+        return "Mensagem";
+      default:
+        return type;
+    }
+  };
 
   return (
-    <TooltipProvider>
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
-          Histórico de Consumo
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Acompanhe o uso de tokens nas suas consultas
-        </p>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Histórico</h1>
+          <p className="text-gray-600">Visualize o histórico de consultas executadas</p>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="shadow-card border-0 bg-gradient-card hover:shadow-lg transition-all duration-300">
-          <CardHeader className="pb-3">
-            <CardDescription className="text-base">Total de Consultas</CardDescription>
-            <CardTitle className="text-4xl bg-gradient-primary bg-clip-text text-transparent">
-              {searches.length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="shadow-card border-0 bg-gradient-card hover:shadow-lg transition-all duration-300">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <CardDescription className="text-base">Tokens Utilizados</CardDescription>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">Total de tokens consumidos em todas as consultas realizadas. Cada consulta utiliza 15 tokens.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <CardTitle className="text-4xl bg-gradient-primary bg-clip-text text-transparent">
-              {searches.reduce((acc, s) => acc + s.tokensUsed, 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="shadow-card border-0 bg-gradient-card hover:shadow-lg transition-all duration-300">
-          <CardHeader className="pb-3">
-            <CardDescription className="text-base">Total de Resultados</CardDescription>
-            <CardTitle className="text-4xl bg-gradient-primary bg-clip-text text-transparent">
-              {searches.reduce((acc, s) => acc + s.resultsCount, 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      {/* Análise de Consumo */}
-      <Card className="shadow-card border-0 bg-gradient-card">
+      {/* Filtros */}
+      <Card className="mb-6">
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-              <TrendingUp className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl">Consumo de Tokens - Últimos 30 Dias</CardTitle>
-              <CardDescription className="text-base mt-1">
-                Acompanhe seu uso diário de tokens
-              </CardDescription>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Filtros
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={consumptionData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  className="text-sm"
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <YAxis 
-                  className="text-sm"
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <ChartTooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="tokens"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={3}
-                  dot={{ fill: "hsl(var(--primary))", r: 5 }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Buscar por nome da consulta..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Filtrar por Data
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Estatísticas Resumidas */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="shadow-card border-0 bg-gradient-card">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total Consumido (30 dias)</p>
-              <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                390 tokens
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card border-0 bg-gradient-card">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Média Diária</p>
-              <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                13 tokens
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card border-0 bg-gradient-card">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Pico de Consumo</p>
-              <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                90 tokens
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Lista de Histórico */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Carregando histórico...</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-4">
+            {filteredHistory.map((item) => (
+              <Card key={item.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold">{item.description}</h3>
+                        <Badge className={getStatusColor(item.action)}>
+                          {getActionLabel(item.action)}
+                        </Badge>
+                        <Badge variant="outline">{getTypeLabel(item.type)}</Badge>
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p><strong>Data de Execução:</strong> {new Date(item.created_at).toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Entidade:</strong> {item.entity_type} #{item.entity_id}</p>
+                        {item.metadata?.resultados && (
+                          <p><strong>Resultados:</strong> {item.metadata.resultados} registros</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        Exportar
+                      </Button>
+                      <Button size="sm">
+                        Ver Detalhes
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {/* History List */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Consultas Realizadas</h2>
-        {searches.map((search) => (
-          <Card key={search.id} className="shadow-card hover:shadow-lg transition-all duration-300 border-0 bg-gradient-card">
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/5">
-                    <Tag className="h-3 w-3" />
-                    {search.category}
-                  </Badge>
-                  <Badge variant="outline" className="gap-1 border-accent/20 bg-accent/5">
-                    <MapPin className="h-3 w-3" />
-                    {search.location}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(search.date).toLocaleDateString("pt-BR")}
-                  </div>
-                  <div>
-                    {search.resultsCount} resultados encontrados
-                  </div>
-                  <div className="font-bold text-primary">
-                    -{search.tokensUsed} tokens
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      </div>
-    </TooltipProvider>
+          {filteredHistory.length === 0 && !isLoading && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-gray-500">Nenhum item encontrado no histórico.</p>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
   );
 };
 

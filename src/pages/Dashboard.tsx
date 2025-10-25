@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { consultaService, Consulta, ConsultaStats } from "@/services";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -22,44 +23,94 @@ const Dashboard = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterDate, setFilterDate] = useState("all");
+  const [consultas, setConsultas] = useState<Consulta[]>([]);
+  const [stats, setStats] = useState<ConsultaStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - will be replaced with real data from backend
-  const consultas = [
-    {
-      id: 1,
-      date: "2024-03-15",
-      category: "Restaurante",
-      location: "São Paulo, SP",
-      resultsCount: 25,
-      tokensUsed: 15,
-    },
-    {
-      id: 2,
-      date: "2024-03-14",
-      category: "Academia",
-      location: "Rio de Janeiro, RJ",
-      resultsCount: 18,
-      tokensUsed: 15,
-    },
-    {
-      id: 3,
-      date: "2024-03-13",
-      category: "Farmácia",
-      location: "Belo Horizonte, MG",
-      resultsCount: 32,
-      tokensUsed: 15,
-    },
-  ];
+  // Load data from database
+  useEffect(() => {
+    loadConsultas();
+    loadStats();
+  }, [filterCategory, filterDate]);
+
+  const loadConsultas = async () => {
+    try {
+      setIsLoading(true);
+      const filters = {
+        category: filterCategory !== "all" ? filterCategory : undefined,
+        // Add date filtering logic based on filterDate
+      };
+      
+      const response = await consultaService.getConsultas(filters);
+      if (response.success && response.data) {
+        setConsultas(response.data);
+      } else {
+        toast.error("Erro ao carregar consultas: " + (response.error || "Erro desconhecido"));
+        setConsultas([]);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar consultas:", error);
+      toast.error("Erro ao conectar com o servidor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const response = await consultaService.getConsultaStats();
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar estatísticas:", error);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearching(true);
+    if (!category.trim() || !location.trim()) {
+      toast.error("Por favor, preencha categoria e localização");
+      return;
+    }
 
-    // Mock search - simulate API call
-    setTimeout(() => {
+    setIsSearching(true);
+    toast.info("Conectando com o servidor...");
+
+    try {
+      // Create new consulta
+      const newConsulta = {
+        category: category.trim(),
+        location: location.trim(),
+        date: new Date().toISOString().split('T')[0],
+        resultsCount: 0,
+        tokensUsed: 15,
+        status: "Em andamento",
+        description: `Busca por ${category} em ${location}`
+      };
+
+      const response = await consultaService.createConsulta(newConsulta);
+      
+      if (response.success && response.data) {
+        toast.success("Busca iniciada! 15 tokens debitados.");
+        setCategory("");
+        setLocation("");
+        // Reload consultas to show the new one
+        loadConsultas();
+        loadStats();
+      } else {
+        toast.error("Erro ao iniciar busca: " + (response.error || "Erro desconhecido"));
+      }
+    } catch (error) {
+      console.error("Erro ao criar consulta:", error);
+      if (error.message?.includes('ERR_CONNECTION_REFUSED') || error.message?.includes('fetch')) {
+        toast.error("Servidor não está disponível. Verifique se o backend está rodando.");
+      } else {
+        toast.error("Erro ao conectar com o servidor: " + error.message);
+      }
+    } finally {
       setIsSearching(false);
-      toast.success("Busca concluída! 15 tokens debitados.");
-    }, 2000);
+    }
   };
 
   const handleDownload = (consultaId: number) => {
@@ -98,10 +149,15 @@ const Dashboard = () => {
   });
 
   // Calculate metrics
-  const userTokens = 15; // Mock - will be replaced with real data
-  const totalConsultas = consultas.length;
-  const totalSpent = totalConsultas * 15;
-  const totalLeads = consultas.reduce((sum, c) => sum + c.resultsCount, 0);
+  const userTokens = 15; // This should come from AuthContext or user service
+  const totalConsultas = stats?.totalConsultas || filteredConsultas.length;
+  const totalSpent = stats?.totalTokensUsados || filteredConsultas.reduce((sum, c) => sum + c.tokensUsed, 0);
+  const totalLeads = stats?.totalResultados || filteredConsultas.reduce((sum, c) => sum + c.resultsCount, 0);
+  const consultasHoje = stats?.consultasHoje || filteredConsultas.filter(c => {
+    const today = new Date().toDateString();
+    const consultaDate = new Date(c.date).toDateString();
+    return consultaDate === today;
+  }).length;
 
   return (
     <TooltipProvider>
@@ -285,7 +341,14 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {filteredConsultas.length === 0 ? (
+        {isLoading ? (
+          <Card className="shadow-card border-0">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Loader2 className="mx-auto h-12 w-12 opacity-50 mb-4 animate-spin" />
+              <p className="text-lg">Carregando consultas...</p>
+            </CardContent>
+          </Card>
+        ) : filteredConsultas.length === 0 ? (
           <Card className="shadow-card border-0">
             <CardContent className="py-12 text-center text-muted-foreground">
               <Search className="mx-auto h-12 w-12 opacity-20 mb-4" />

@@ -12,6 +12,8 @@ import Register from "./pages/Register";
 import RegisterWithPlan from "./pages/RegisterWithPlan";
 import LandingPage from "./pages/LandingPage";
 import ConsultaDetalhes from "./pages/ConsultaDetalhes";
+import Disparo from "./pages/Disparo";
+import DisparoConsulta from "./pages/DisparoConsulta";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/register-plan" element={<RegisterWithPlan />} />
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/consulta/:id" element={<Layout><ConsultaDetalhes /></Layout>} />
+          <Route path="/disparo" element={<Layout><Disparo /></Layout>} />
+          <Route path="/disparo/:id" element={<Layout><DisparoConsulta /></Layout>} />
           <Route path="/history" element={<Layout><History /></Layout>} />
           <Route path="/tokens" element={<Layout><TokenManagement /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -57,6 +57,11 @@ const Disparo = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Ordenar por data desc (mais recentes primeiro)
+  const sortedConsultas = [...filteredConsultas].sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+
   const handleSelectConsulta = (consultaId: number) => {
     navigate(`/disparo/${consultaId}`);
   };
@@ -140,7 +145,7 @@ const Disparo = () => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredConsultas.map((consulta) => (
+          {sortedConsultas.map((consulta) => (
           <Card key={consulta.id} className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -174,14 +179,20 @@ const Disparo = () => {
                   <span className="text-muted-foreground">Tokens usados: </span>
                   <span className="font-medium">{consulta.tokensUsed}</span>
                 </div>
-                <Button 
-                  onClick={() => handleSelectConsulta(consulta.id)}
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  Selecionar
-                </Button>
+                {consulta.resultsCount > 0 ? (
+                  <Button 
+                    onClick={() => handleSelectConsulta(consulta.id)}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    Selecionar
+                  </Button>
+                ) : (
+                  <Button disabled size="sm" variant="outline" className="gap-2">
+                    Não possui dados
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

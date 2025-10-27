@@ -60,20 +60,22 @@ const DisparoConsulta = () => {
 
   // Converter resultados em contatos
   const convertResultadosToContatos = (resultados: Resultado[]): ContatoFromResultado[] => {
-    return resultados
-      .filter(resultado => resultado.telefone) // Só incluir resultados com telefone
-      .map(resultado => ({
-        id: resultado.id,
-        empresa: resultado.nomeempresa,
-        telefone: resultado.telefone,
-        email: resultado.email,
-        website: resultado.website,
-        endereco: resultado.endereco,
-        rating: resultado.rating,
-        template: `Olá! Encontrei sua empresa ${resultado.nomeempresa} e gostaria de conversar sobre nossos serviços. Podemos agendar uma conversa?`,
-        status: 'Pendente' as const
-      }));
+    return resultados.map((resultado) => {
+      const rawTemplate = (resultado as any).template ??
+        "Olá.\n\nNossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso.\n\nQual seria o melhor horário para agendarmos uma breve demonstração?\n\nAtenciosamente,\n\nEquipe IDEVA\n(Especialistas em Automação de Sistemas)";
+      const normalizedTemplate = rawTemplate.replace(/\\r?\\n/g, "\n");
+      return {
+        id: (resultado as any).id_resultado ?? (resultado as any).id,
+        empresa: (resultado as any).nomeempresa ?? (resultado as any).empresa ?? "",
+        email: (resultado as any).email ?? "",
+        telefone: (resultado as any).telefone ?? "",
+        template: normalizedTemplate,
+        status: 'Pendente'
+      };
+    });
   };
+
+
 
   // Load data from database
   const loadData = async () => {
@@ -191,16 +193,41 @@ const DisparoConsulta = () => {
 
   const handleEditTemplate = (contatoId: number, template: string) => {
     setEditingTemplate(contatoId);
-    setTempTemplate(template);
+    const normalized = template.replace(/\\r?\\n/g, "\n");
+    setTempTemplate(normalized);
   };
 
-  const handleSaveTemplate = (contatoId: number) => {
-    setContatos(prev => prev.map(c => 
-      c.id === contatoId ? { ...c, template: tempTemplate } : c
-    ));
-    setEditingTemplate(null);
-    setTempTemplate("");
-    toast.success("Template atualizado!");
+  const handleSaveTemplate = async (contatoId: number) => {
+    try {
+      if (!contatoId) {
+        toast.error("ID do contato inválido para salvar template.");
+        return;
+      }
+
+      const hasColumn = await resultadoService.hasTemplateColumn();
+      if (!hasColumn) {
+        toast.error("Coluna 'template' não disponível no banco. Aplique a migração e atualize o schema do Supabase.");
+        return;
+      }
+
+      const resp = await resultadoService.updateResultadoTemplate(contatoId, tempTemplate);
+      if (resp.success) {
+        setContatos(prev => prev.map(c => 
+          c.id === contatoId ? { ...c, template: tempTemplate } : c
+        ));
+        toast.success("Template salvo no banco!");
+      } else {
+        toast.error("Erro ao salvar template: " + (resp.error || "Erro desconhecido"));
+        return;
+      }
+    } catch (error) {
+      console.error("Erro ao salvar template:", error);
+      toast.error("Erro ao conectar com o servidor");
+      return;
+    } finally {
+      setEditingTemplate(null);
+      setTempTemplate("");
+    }
   };
 
   const handleCancelEdit = () => {
@@ -427,7 +454,7 @@ const DisparoConsulta = () => {
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                <p className="text-sm line-clamp-3">{contato.template}</p>
+                                <p className="text-sm line-clamp-3 whitespace-pre-line">{contato.template}</p>
                                 <Button
                                   size="sm"
                                   variant="ghost"

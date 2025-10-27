@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { ApiResponse } from './api';
 
 export interface Consulta {
@@ -9,25 +9,20 @@ export interface Consulta {
   resultsCount: number;
   tokensUsed: number;
   status: string;
-  description?: string;
+  description: string;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface ConsultaFilters {
   category?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  status?: string;
   search?: string;
-  page?: number;
-  limit?: number;
 }
 
 export interface ConsultaStats {
   totalConsultas: number;
-  totalResultados: number;
   totalTokensUsados: number;
+  totalResultados: number;
   consultasHoje: number;
 }
 
@@ -47,7 +42,7 @@ class ConsultaService {
           lastupdate,
           active
         `)
-;
+        .order('createdat', { ascending: false });
 
       if (filters?.category) {
         consultasQuery = consultasQuery.eq('parametrocategoria', filters.category);
@@ -156,47 +151,29 @@ class ConsultaService {
     }
   }
 
-  // Get consulta statistics
+  // Get consulta stats
   async getConsultaStats(): Promise<ApiResponse<ConsultaStats>> {
     try {
-      // Get consultas data
-      const { data: consultasData, error: consultasError } = await supabase
+      // Basic stats implementation (should be replaced with optimized SQL)
+      const { data: consultasData } = await supabase
         .from('consultas')
-        .select('id_consulta, custotokens, createdat');
+        .select('custotokens, createdat');
 
-      if (consultasError) {
-        return {
-          success: false,
-          error: consultasError.message
-        };
-      }
-
-      // Get resultados count
-      const { count: totalResultados, error: resultadosError } = await supabase
+      const { data: resultadosData } = await supabase
         .from('resultados')
-        .select('*', { count: 'exact', head: true });
+        .select('id_consulta');
 
-      if (resultadosError) {
-        return {
-          success: false,
-          error: resultadosError.message
-        };
-      }
+      const totalConsultas = consultasData?.length || 0;
+      const totalTokensUsados = consultasData?.reduce((sum, c) => sum + (c.custotokens || 0), 0) || 0;
+      const totalResultados = resultadosData?.length || 0;
 
-      const today = new Date().toISOString().split('T')[0];
-      
-      const stats: ConsultaStats = {
-        totalConsultas: consultasData?.length || 0,
-        totalResultados: totalResultados || 0,
-        totalTokensUsados: consultasData?.reduce((sum, item) => sum + (item.custotokens || 0), 0) || 0,
-        consultasHoje: consultasData?.filter(item => {
-          return item.createdat?.startsWith(today);
-        }).length || 0
-      };
+      // Consultas hoje
+      const today = new Date().toDateString();
+      const consultasHoje = (consultasData || []).filter(c => new Date(c.createdat).toDateString() === today).length;
 
       return {
         success: true,
-        data: stats
+        data: { totalConsultas, totalTokensUsados, totalResultados, consultasHoje }
       };
     } catch (error) {
       return {
@@ -204,22 +181,6 @@ class ConsultaService {
         error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     }
-  }
-
-  // Create a new consulta (simplified implementation)
-  async createConsulta(consulta: Omit<Consulta, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Consulta>> {
-    return {
-      success: false,
-      error: 'Funcionalidade não implementada ainda'
-    };
-  }
-
-  // Update a consulta (simplified implementation)
-  async updateConsulta(id: number, consulta: Partial<Consulta>): Promise<ApiResponse<Consulta>> {
-    return {
-      success: false,
-      error: 'Funcionalidade não implementada ainda'
-    };
   }
 
   // Delete a consulta (simplified implementation)
@@ -281,6 +242,57 @@ class ConsultaService {
         success: true,
         data: consultasWithResults
       };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      };
+    }
+  }
+
+  // Create a new consulta
+  async createConsulta(newConsulta: Omit<Consulta, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Consulta>> {
+    try {
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('consultas')
+        .insert({
+          parametrocategoria: newConsulta.category,
+          parametrolocalidade: newConsulta.location,
+          custotokens: newConsulta.tokensUsed,
+          createdat: nowIso,
+          lastupdate: nowIso,
+          active: true
+        })
+        .select(`
+          id_consulta,
+          parametrocategoria,
+          parametrolocalidade,
+          custotokens,
+          createdat,
+          lastupdate,
+          active
+        `)
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      const transformed: Consulta = {
+        id: data.id_consulta,
+        date: data.createdat,
+        category: data.parametrocategoria,
+        location: data.parametrolocalidade,
+        resultsCount: 0,
+        tokensUsed: data.custotokens,
+        status: data.active ? 'Ativa' : 'Inativa',
+        description: `${data.parametrocategoria} em ${data.parametrolocalidade}`,
+        created_at: data.createdat,
+        updated_at: data.lastupdate
+      };
+
+      return { success: true, data: transformed };
     } catch (error) {
       return {
         success: false,

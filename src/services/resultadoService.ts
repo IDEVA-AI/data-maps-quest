@@ -13,6 +13,7 @@ export interface Resultado {
   active: boolean;
   createdat: string;
   lastupdate: string;
+  template?: string;
 }
 
 export interface ResultadoFilters {
@@ -96,6 +97,102 @@ class ResultadoService {
       return {
         success: false,
         error: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  async hasTemplateColumn(): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('resultados')
+        .select('template')
+        .limit(1);
+      if (error) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async hasLastUpdateColumn(): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('resultados')
+        .select('lastupdate')
+        .limit(1);
+      if (error) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async hasUpdatedAtColumn(): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('resultados')
+        .select('updated_at')
+        .limit(1);
+      if (error) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async updateResultadoTemplate(id: number, template: string): Promise<ApiResponse<Resultado>> {
+    try {
+      // Always try to update template. Add timestamp to either lastupdate or updated_at if present.
+      const payload: any = { template };
+
+      const hasLast = await this.hasLastUpdateColumn();
+      if (hasLast) {
+        payload.lastupdate = new Date().toISOString();
+      } else {
+        const hasUpdated = await this.hasUpdatedAtColumn();
+        if (hasUpdated) {
+          payload.updated_at = new Date().toISOString();
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('resultados')
+        .update(payload)
+        .eq('id_resultado', id)
+        .select('id_resultado, template')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao atualizar template:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      if (!data) {
+        // Nenhuma linha foi atualizada (possível RLS ou ID inexistente)
+        return {
+          success: false,
+          error: 'Nenhuma linha foi atualizada (verifique permissões RLS e ID).'
+        };
+      }
+
+      return {
+        success: true,
+        data: data as any
+      };
+    } catch (error: any) {
+      console.error('Erro ao atualizar template:', error);
+      return {
+        success: false,
+        error: error?.message || 'Erro interno do servidor'
       };
     }
   }

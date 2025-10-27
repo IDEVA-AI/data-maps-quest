@@ -78,6 +78,17 @@ const Dashboard = () => {
     toast.info("Conectando com o servidor...");
 
     try {
+      // Enviar categoria e localização para webhook
+      try {
+        await fetch('https://n8n.ideva.ai/webhook-test/8a02919e-2c76-472f-a5ef-649ee059315e', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: category.trim(), location: location.trim() })
+        });
+      } catch (whErr) {
+        console.warn('Falha ao enviar webhook:', whErr);
+      }
+
       // Create new consulta
       const newConsulta = {
         category: category.trim(),
@@ -103,22 +114,14 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Erro ao criar consulta:", error);
-      if (error.message?.includes('ERR_CONNECTION_REFUSED') || error.message?.includes('fetch')) {
+      if ((error as any).message?.includes('ERR_CONNECTION_REFUSED') || (error as any).message?.includes('fetch')) {
         toast.error("Servidor não está disponível. Verifique se o backend está rodando.");
       } else {
-        toast.error("Erro ao conectar com o servidor: " + error.message);
+        toast.error("Erro ao conectar com o servidor: " + (error as any).message);
       }
     } finally {
       setIsSearching(false);
     }
-  };
-
-  const handleDownload = (consultaId: number) => {
-    toast.success("Download iniciado!");
-  };
-
-  const handleViewDetails = (consultaId: number) => {
-    navigate(`/consulta/${consultaId}`);
   };
 
   // Filter consultas based on selected filters
@@ -146,6 +149,11 @@ const Dashboard = () => {
       }
     }
     return true;
+  });
+
+  // Ordenar por data desc (mais recentes primeiro)
+  const sortedConsultas = [...filteredConsultas].sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
   // Calculate metrics
@@ -357,7 +365,7 @@ const Dashboard = () => {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filteredConsultas.map((consulta) => (
+            {sortedConsultas.map((consulta) => (
               <Card key={consulta.id} className="shadow-card hover:shadow-lg transition-all duration-300 border-0 bg-gradient-card group">
                 <CardContent className="pt-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -383,21 +391,29 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      <Button
-                        onClick={() => handleViewDetails(consulta.id)}
-                        variant="outline"
-                        className="w-full sm:w-auto group-hover:border-primary/30 transition-colors"
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Ver Detalhes
-                      </Button>
-                      <Button
-                        onClick={() => handleDownload(consulta.id)}
-                        className="w-full sm:w-auto shadow-md hover:shadow-glow transition-all"
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
-                      </Button>
+                      {consulta.resultsCount > 0 ? (
+                        <>
+                          <Button
+                            onClick={() => handleViewDetails(consulta.id)}
+                            variant="outline"
+                            className="w-full sm:w-auto group-hover:border-primary/30 transition-colors"
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Ver Detalhes
+                          </Button>
+                          <Button
+                            onClick={() => handleDownload(consulta.id)}
+                            className="w-full sm:w-auto shadow-md hover:shadow-glow transition-all"
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            Download
+                          </Button>
+                        </>
+                      ) : (
+                        <Button disabled className="w-full sm:w-auto" variant="outline">
+                          Não possui dados
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

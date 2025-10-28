@@ -1,17 +1,14 @@
 import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const isAuthenticated = true; // Mock - will be replaced with real auth
-
-  if (!isAuthenticated) {
-    return <>{children}</>;
-  }
+  const { user } = useAuth();
 
   return (
     <SidebarProvider>
@@ -22,7 +19,7 @@ const Layout = ({ children }: LayoutProps) => {
             <SidebarTrigger />
             <div className="flex-1">
               <h2 className="text-sm font-medium text-muted-foreground">
-                Bem-vindo ao Lead Radar
+                {user ? `Bem-vindo, ${user.nome}` : 'Bem-vindo ao Lead Radar'}
               </h2>
             </div>
           </header>

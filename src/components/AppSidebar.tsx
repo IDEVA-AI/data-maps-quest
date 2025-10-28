@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { Search, History, CreditCard, Radar, Send } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Search, History, CreditCard, Radar, Send, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const items = [
   { title: "Consultas", url: "/consulta", icon: Search },
@@ -25,6 +26,8 @@ const items = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const currentPath = location.pathname;
   const userTokens = 15; // Mock - will be replaced with real data
 
@@ -33,6 +36,20 @@ export function AppSidebar() {
     active
       ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground";
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <Sidebar className="border-sidebar-border">
@@ -90,14 +107,28 @@ export function AppSidebar() {
             </div>
 
             {/* User Info */}
-            <div className="flex items-center gap-3 rounded-lg border border-sidebar-border p-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-primary text-sm font-bold text-primary-foreground">
-                U
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 rounded-lg border border-sidebar-border p-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-primary text-sm font-bold text-primary-foreground">
+                  {user ? getUserInitials(user.nome) : 'U'}
+                </div>
+                <div className="flex-1 text-sm">
+                  <p className="font-medium text-sidebar-foreground">
+                    {user ? user.nome : 'Usuário'}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/70">
+                    {user ? user.email : 'user@email.com'}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 text-sm">
-                <p className="font-medium text-sidebar-foreground">Usuário</p>
-                <p className="text-xs text-sidebar-foreground/70">user@email.com</p>
-              </div>
+              <Button
+                size="sm"
+                className="w-full bg-primary text-primary-foreground hover:bg-white hover:text-primary border border-primary transition-colors"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
             </div>
           </div>
         ) : (
@@ -106,7 +137,7 @@ export function AppSidebar() {
               {userTokens}
             </div>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-primary text-xs font-bold text-primary-foreground">
-              U
+              {user ? getUserInitials(user.nome) : 'U'}
             </div>
           </div>
         )}

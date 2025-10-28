@@ -6,7 +6,7 @@ import { Search, Calendar, MapPin, Tag, Filter, Send, Loader2 } from "lucide-rea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { consultaService, Consulta } from "@/services";
+import { consultaService, Consulta, authService } from "@/services";
 import { toast } from "sonner";
 
 const Disparo = () => {
@@ -16,6 +16,7 @@ const Disparo = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canViewUserNames, setCanViewUserNames] = useState(false);
 
   // Load consultas from database
   const loadConsultas = async () => {
@@ -44,8 +45,19 @@ const Disparo = () => {
   };
 
   useEffect(() => {
+    checkPermissions();
     loadConsultas();
   }, []);
+
+  const checkPermissions = async () => {
+    try {
+      const canView = await authService.canViewUserNames();
+      setCanViewUserNames(canView);
+    } catch (error) {
+      console.error("Erro ao verificar permissões:", error);
+      setCanViewUserNames(false);
+    }
+  };
 
   const filteredConsultas = consultas.filter(consulta => {
     const matchesCategory = filterCategory === "all" || consulta.category.toLowerCase().includes(filterCategory.toLowerCase());
@@ -173,6 +185,12 @@ const Disparo = () => {
                   {consulta.resultsCount} resultados
                 </div>
               </div>
+              
+              {canViewUserNames && consulta.usuario_nome && (
+                <div className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                  <span>Por: {consulta.usuario_nome}</span>
+                </div>
+              )}
               
               <div className="flex items-center justify-between">
                 <div className="text-sm">

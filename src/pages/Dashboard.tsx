@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { consultaService, Consulta, ConsultaStats } from "@/services";
+import { consultaService, Consulta, ConsultaStats, authService } from "@/services";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,12 +26,24 @@ const Dashboard = () => {
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [stats, setStats] = useState<ConsultaStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [canViewUserNames, setCanViewUserNames] = useState(false);
 
   // Load data from database
   useEffect(() => {
+    checkPermissions();
     loadConsultas();
     loadStats();
   }, [filterCategory, filterDate]);
+
+  const checkPermissions = async () => {
+    try {
+      const canView = await authService.canViewUserNames();
+      setCanViewUserNames(canView);
+    } catch (error) {
+      console.error("Erro ao verificar permissões:", error);
+      setCanViewUserNames(false);
+    }
+  };
 
   const loadConsultas = async () => {
     try {
@@ -78,12 +90,24 @@ const Dashboard = () => {
     toast.info("Conectando com o servidor...");
 
     try {
-      // Enviar categoria e localização para webhook
+      // Obter o ID do usuário logado
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        toast.error("Usuário não autenticado");
+        setIsSearching(false);
+        return;
+      }
+
+      // Enviar categoria, localização e id_usuario para webhook
       try {
-        await fetch('https://n8n.ideva.ai/webhook-test/8a02919e-2c76-472f-a5ef-649ee059315e', {
+        await fetch('https://n8n.ideva.ai/webhook/8a02919e-2c76-472f-a5ef-649ee059315e', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category: category.trim(), location: location.trim() })
+          body: JSON.stringify({ 
+            category: category.trim(), 
+            location: location.trim(),
+            id_usuario: currentUser.id_usuario
+          })
         });
       } catch (whErr) {
         console.warn('Falha ao enviar webhook:', whErr);
@@ -122,6 +146,15 @@ const Dashboard = () => {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleViewDetails = (consultaId: number) => {
+    navigate(`/consulta/${consultaId}`);
+  };
+
+  const handleDownload = (consultaId: number) => {
+    toast.success(`Download iniciado para consulta ${consultaId}!`);
+    // TODO: Implementar download real dos dados
   };
 
   // Filter consultas based on selected filters
@@ -388,6 +421,11 @@ const Dashboard = () => {
                         <div className="font-medium">
                           {consulta.resultsCount} resultados
                         </div>
+                        {canViewUserNames && consulta.usuario_nome && (
+                          <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded">
+                            <span>Por: {consulta.usuario_nome}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">

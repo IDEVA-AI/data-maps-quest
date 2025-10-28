@@ -1,5 +1,6 @@
 // Export all services
 export * from './api';
+export * from './authService';
 export * from './consultaService';
 export * from './contatoService';
 export * from './disparoService';

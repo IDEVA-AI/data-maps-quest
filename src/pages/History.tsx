@@ -4,8 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Search, Calendar, Download, Loader2 } from "lucide-react";
-import { historyService, HistoryEntry, HistoryStats } from "@/services";
+import { consultaService, Consulta } from "@/services";
 import { toast } from "sonner";
+
+interface HistoryEntry {
+  id: number;
+  type: 'consulta';
+  action: string;
+  description: string;
+  entity_id: number;
+  created_at: string;
+  category?: string;
+  location?: string;
+  resultsCount?: number;
+  tokensUsed?: number;
+  status?: string;
+}
+
+interface HistoryStats {
+  totalEntries: number;
+  consultasCount: number;
+  totalTokensUsed: number;
+  totalResults: number;
+}
 
 const History = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -13,32 +34,54 @@ const History = () => {
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar dados do histórico
+  // Carregar dados do histórico usando consultas do Supabase
   const loadHistory = async () => {
     try {
       setIsLoading(true);
-      const [historyResponse, statsResponse] = await Promise.all([
-        historyService.getHistory({ limit: 50 }),
-        historyService.getHistoryStats()
-      ]);
+      
+      // Buscar todas as consultas para criar o histórico
+      const consultasResponse = await consultaService.getConsultas({});
+      
+      if (consultasResponse.success && consultasResponse.data) {
+        const consultas = consultasResponse.data;
+        
+        // Converter consultas em entradas de histórico
+        const historyEntries: HistoryEntry[] = consultas.map((consulta: Consulta) => ({
+          id: consulta.id,
+          type: 'consulta' as const,
+          action: 'create',
+          description: `Busca por ${consulta.category} em ${consulta.location}`,
+          entity_id: consulta.id,
+          created_at: consulta.date,
+          category: consulta.category,
+          location: consulta.location,
+          resultsCount: consulta.resultsCount,
+          tokensUsed: consulta.tokensUsed,
+          status: consulta.status
+        }));
 
-      if (historyResponse.success && historyResponse.data) {
-        setHistoryData(historyResponse.data);
+        // Ordenar por data mais recente primeiro
+        historyEntries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        setHistoryData(historyEntries);
+
+        // Calcular estatísticas
+        const totalTokensUsed = consultas.reduce((sum, c) => sum + (c.tokensUsed || 0), 0);
+        const totalResults = consultas.reduce((sum, c) => sum + (c.resultsCount || 0), 0);
+        
+        setStats({
+          totalEntries: consultas.length,
+          consultasCount: consultas.length,
+          totalTokensUsed,
+          totalResults
+        });
       } else {
         toast.error("Erro ao carregar histórico");
         setHistoryData([]);
       }
-
-      if (statsResponse.success && statsResponse.data) {
-        setStats(statsResponse.data);
-      }
     } catch (error) {
       console.error("Erro ao carregar histórico:", error);
-      if (error.message?.includes('ERR_CONNECTION_REFUSED') || error.message?.includes('fetch')) {
-        toast.error("Servidor não está disponível. Verifique se o backend está rodando.");
-      } else {
-        toast.error("Erro ao conectar com o servidor: " + error.message);
-      }
+      toast.error("Erro ao carregar dados do histórico");
       setHistoryData([]);
     } finally {
       setIsLoading(false);
@@ -154,9 +197,12 @@ const History = () => {
                       </div>
                       <div className="text-sm text-gray-600 space-y-1">
                         <p><strong>Data de Execução:</strong> {new Date(item.created_at).toLocaleDateString('pt-BR')}</p>
-                        <p><strong>Entidade:</strong> {item.entity_type} #{item.entity_id}</p>
-                        {item.metadata?.resultados && (
-                          <p><strong>Resultados:</strong> {item.metadata.resultados} registros</p>
+                        <p><strong>Consulta:</strong> #{item.entity_id}</p>
+                        {item.resultsCount && (
+                          <p><strong>Resultados:</strong> {item.resultsCount} registros</p>
+                        )}
+                        {item.tokensUsed && (
+                          <p><strong>Tokens Utilizados:</strong> {item.tokensUsed}</p>
                         )}
                       </div>
                     </div>

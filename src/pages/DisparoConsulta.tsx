@@ -28,8 +28,14 @@ import {
   Wand2,
   SendHorizontal
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { consultaService, resultadoService, Resultado } from "@/services";
+import { consultaService, resultadoService, Resultado, authService } from "@/services";
 
 // Interface para contatos baseada nos resultados
 interface ContatoFromResultado {
@@ -57,18 +63,20 @@ const DisparoConsulta = () => {
   const [isSendingMessage, setIsSendingMessage] = useState<number | null>(null);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isSendingAll, setIsSendingAll] = useState(false);
+  const [canViewUserNames, setCanViewUserNames] = useState(false);
 
   // Converter resultados em contatos
   const convertResultadosToContatos = (resultados: Resultado[]): ContatoFromResultado[] => {
     return resultados.map((resultado) => {
       const rawTemplate = (resultado as any).template ??
-        "Olá.\n\nNossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso.\n\nQual seria o melhor horário para agendarmos uma breve demonstração?\n\nAtenciosamente,\n\nEquipe IDEVA\n(Especialistas em Automação de Sistemas)";
+        "Olá, \n \n Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. \n \n Qual seria o melhor horário para agendarmos uma breve demonstração? \n \n Atenciosamente, \n Equipe IDEVA(Especialistas em Automação de Sistemas)";
       const normalizedTemplate = rawTemplate.replace(/\\r?\\n/g, "\n");
       return {
         id: (resultado as any).id_resultado ?? (resultado as any).id,
         empresa: (resultado as any).nomeempresa ?? (resultado as any).empresa ?? "",
         email: (resultado as any).email ?? "",
         telefone: (resultado as any).telefone ?? "",
+        endereco: (resultado as any).endereco ?? "",
         template: normalizedTemplate,
         status: 'Pendente'
       };
@@ -76,6 +84,17 @@ const DisparoConsulta = () => {
   };
 
 
+
+  // Check user permissions
+  const checkPermissions = async () => {
+    try {
+      const canView = await authService.canViewUserNames();
+      setCanViewUserNames(canView);
+    } catch (error) {
+      console.error("Erro ao verificar permissões:", error);
+      setCanViewUserNames(false);
+    }
+  };
 
   // Load data from database
   const loadData = async () => {
@@ -237,6 +256,7 @@ const DisparoConsulta = () => {
 
   useEffect(() => {
     loadData();
+    checkPermissions();
   }, [id]);
 
   const stats = {
@@ -249,7 +269,8 @@ const DisparoConsulta = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button 
@@ -266,6 +287,13 @@ const DisparoConsulta = () => {
           <p className="text-muted-foreground">
             Gerencie templates e envie mensagens para os contatos encontrados
           </p>
+          {canViewUserNames && consulta?.usuario_nome && (
+            <div className="mt-2">
+              <p className="text-sm text-muted-foreground">
+                Por: {consulta.usuario_nome}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -454,7 +482,14 @@ const DisparoConsulta = () => {
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                <p className="text-sm line-clamp-3 whitespace-pre-line">{contato.template}</p>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <p className="text-sm line-clamp-3 whitespace-pre-line cursor-help">{contato.template}</p>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-md p-3">
+                                    <p className="whitespace-pre-line text-sm">{contato.template}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -536,7 +571,8 @@ const DisparoConsulta = () => {
           </Card>
         </>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

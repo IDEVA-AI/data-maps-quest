@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
-import { resultadoService, consultaService, Resultado } from "@/services";
+import { resultadoService, consultaService, Resultado, authService } from "@/services";
 
 const ConsultaDetalhes = () => {
   const navigate = useNavigate();
@@ -24,6 +24,18 @@ const ConsultaDetalhes = () => {
   const [consulta, setConsulta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [canViewUserNames, setCanViewUserNames] = useState(false);
+
+  // Check user permissions
+  const checkPermissions = async () => {
+    try {
+      const canView = await authService.canViewUserNames();
+      setCanViewUserNames(canView);
+    } catch (error) {
+      console.error("Erro ao verificar permissões:", error);
+      setCanViewUserNames(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,6 +64,7 @@ const ConsultaDetalhes = () => {
     };
     
     loadData();
+    checkPermissions();
   }, [id]);
 
   const handleDownload = () => {
@@ -101,6 +114,13 @@ const ConsultaDetalhes = () => {
                 <p className="text-muted-foreground">
                   {consulta?.parametrocategoria} em {consulta?.parametrolocalidade}
                 </p>
+                {canViewUserNames && consulta?.usuario_nome && (
+                  <div className="mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      Por: {consulta.usuario_nome}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

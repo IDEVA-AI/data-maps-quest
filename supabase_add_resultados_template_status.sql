@@ -71,31 +71,28 @@ BEGIN
   IF NOT template_exists THEN
     ALTER TABLE public.resultados
       ADD COLUMN template TEXT NOT NULL DEFAULT (
-        'Olá.\n\n' ||
-        'Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso.\n\n' ||
-        'Qual seria o melhor horário para agendarmos uma breve demonstração?\n\n' ||
-        'Atenciosamente,\n\n' ||
-        'Equipe IDEVA\n' ||
-        '(Especialistas em Automação de Sistemas)'
+        'Olá, \n \n' ||
+        'Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. \n \n' ||
+        'Qual seria o melhor horário para agendarmos uma breve demonstração? \n \n' ||
+        'Atenciosamente, \n' ||
+        'Equipe IDEVA(Especialistas em Automação de Sistemas)'
       );
   ELSE
     -- Set default to the specified message and backfill NULLs
     ALTER TABLE public.resultados
       ALTER COLUMN template SET DEFAULT (
-        'Olá.\n\n' ||
-        'Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso.\n\n' ||
-        'Qual seria o melhor horário para agendarmos uma breve demonstração?\n\n' ||
-        'Atenciosamente,\n\n' ||
-        'Equipe IDEVA\n' ||
-        '(Especialistas em Automação de Sistemas)'
+        'Olá, \n \n' ||
+        'Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. \n \n' ||
+        'Qual seria o melhor horário para agendarmos uma breve demonstração? \n \n' ||
+        'Atenciosamente, \n' ||
+        'Equipe IDEVA(Especialistas em Automação de Sistemas)'
       );
     UPDATE public.resultados SET template = (
-        'Olá.\n\n' ||
-        'Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso.\n\n' ||
-        'Qual seria o melhor horário para agendarmos uma breve demonstração?\n\n' ||
-        'Atenciosamente,\n\n' ||
-        'Equipe IDEVA\n' ||
-        '(Especialistas em Automação de Sistemas)'
+        'Olá, \n \n' ||
+        'Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. \n \n' ||
+        'Qual seria o melhor horário para agendarmos uma breve demonstração? \n \n' ||
+        'Atenciosamente, \n' ||
+        'Equipe IDEVA(Especialistas em Automação de Sistemas)'
       )
       WHERE template IS NULL;
     ALTER TABLE public.resultados ALTER COLUMN template SET NOT NULL;

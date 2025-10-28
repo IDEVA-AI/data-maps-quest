@@ -9,16 +9,14 @@ ADD COLUMN status VARCHAR(50) DEFAULT 'Pendente';
 
 -- 2. Adicionar campo 'template' com template padrão
 ALTER TABLE resultados 
-ADD COLUMN template TEXT DEFAULT 'Olá.
-
-Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso.
-
-Qual seria o melhor horário para agendarmos uma breve demonstração?
-
-Atenciosamente,
-
-Equipe IDEVA
-(Especialistas em Automação de Sistemas)';
+ADD COLUMN template TEXT DEFAULT 'Olá, 
+ 
+ Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. 
+ 
+ Qual seria o melhor horário para agendarmos uma breve demonstração? 
+ 
+ Atenciosamente, 
+ Equipe IDEVA(Especialistas em Automação de Sistemas)';
 
 -- 3. Adicionar campos de controle de disparo
 ALTER TABLE resultados 

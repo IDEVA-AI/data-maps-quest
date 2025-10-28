@@ -1,77 +1,127 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Radar } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Get the page user was trying to access before login
+  const from = location.state?.from?.pathname || "/consulta";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login - will be replaced with real authentication
-    window.location.href = "/";
+    
+    if (!email || !password) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+
+    if (!email.includes('@')) {
+      toast.error("Por favor, insira um email válido");
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const success = await login({ email, senha: password });
+      if (success) {
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Erro interno do servidor");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-subtle p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-gradient-card animate-scale-in">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
-            <Radar className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold">Bem-vindo de volta</CardTitle>
-            <p className="text-lg font-semibold bg-gradient-primary bg-clip-text text-transparent">
-              Lead Radar
-            </p>
-          </div>
-          <CardDescription className="text-base">
-            Entre com sua conta para acessar a plataforma
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">Entrar</CardTitle>
+          <CardDescription className="text-center">
+            Entre com suas credenciais para acessar sua conta
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-5">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-base">Email</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-11"
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-base">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11"
-                required
-              />
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full h-11 shadow-lg hover:shadow-glow transition-all text-base">
-              Entrar
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                "Entrar"
+              )}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Não tem uma conta?{" "}
-              <Link to="/register" className="font-semibold text-primary hover:underline">
-                Cadastre-se
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
+          </form>
+          <div className="mt-4 text-center text-sm">
+            Não tem uma conta?{" "}
+            <Link to="/register" className="text-blue-600 hover:underline">
+              Cadastre-se
+            </Link>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

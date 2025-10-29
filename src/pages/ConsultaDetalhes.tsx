@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { resultadoService, consultaService, Resultado, authService } from "@/services";
+import { downloadCSV, CSVColumn, validateCSVData, formatDateISO, formatDateBR } from "@/utils/csvUtils";
 
 const ConsultaDetalhes = () => {
   const navigate = useNavigate();
@@ -67,8 +68,61 @@ const ConsultaDetalhes = () => {
     checkPermissions();
   }, [id]);
 
-  const handleDownload = () => {
-    toast.success("Download iniciado!");
+  const handleDownload = async () => {
+    try {
+      // Validar se há dados para exportar
+      const validation = validateCSVData(resultados);
+      if (!validation.isValid) {
+        toast.error(validation.message || 'Nenhum dado disponível para exportar');
+        return;
+      }
+
+      // Mostrar feedback visual
+      toast.loading('Gerando arquivo CSV...', { id: 'csv-download' });
+
+      // Definir colunas do CSV
+      const columns: CSVColumn[] = [
+        { key: 'nomeempresa', header: 'Nome da Empresa' },
+        { key: 'endereco', header: 'Endereço' },
+        { key: 'telefone', header: 'Telefone' },
+        { key: 'email', header: 'Email' },
+        { key: 'website', header: 'Website' },
+        { key: 'rating', header: 'Avaliação' },
+        { key: 'categoria', header: 'Categoria' },
+        { key: 'localidade', header: 'Localidade' },
+        { 
+          key: 'createdat', 
+          header: 'Data de Criação',
+          formatter: (value) => value ? formatDateISO(value) : ''
+        }
+      ];
+
+      // Preparar dados para CSV
+      const csvData = resultados.map(resultado => ({
+        nomeempresa: resultado.nomeempresa || '',
+        endereco: resultado.endereco || '',
+        telefone: resultado.telefone || '',
+        email: resultado.email || '',
+        website: resultado.website || '',
+        rating: resultado.rating || '',
+        categoria: consulta?.parametrocategoria || '',
+        localidade: consulta?.parametrolocalidade || '',
+        createdat: resultado.createdat || ''
+      }));
+
+      // Gerar nome do arquivo
+      const categoria = consulta?.category?.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_') || 'consulta';
+      const dataConsulta = consulta?.created_at ? formatDateBR(consulta.created_at).replace(/\//g, '-') : new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+      const filename = `consulta_${categoria}_${dataConsulta}_dados_completos.csv`;
+
+      // Fazer download
+      downloadCSV(csvData, columns, { filename });
+
+      toast.success('Arquivo CSV baixado com sucesso!', { id: 'csv-download' });
+    } catch (error) {
+      console.error('Erro ao gerar CSV:', error);
+      toast.error('Erro ao gerar arquivo CSV', { id: 'csv-download' });
+    }
   };
 
   const filteredResults = resultados.filter((result) => {
@@ -112,7 +166,7 @@ const ConsultaDetalhes = () => {
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Consulta #{id}</h1>
                 <p className="text-muted-foreground">
-                  {consulta?.parametrocategoria} em {consulta?.parametrolocalidade}
+                  {consulta?.category} em {consulta?.location}
                 </p>
                 {canViewUserNames && consulta?.usuario_nome && (
                   <div className="mt-2">

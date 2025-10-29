@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { downloadCSV, CSVColumn, validateCSVData, formatDateISO, formatCurrency } from "@/utils/csvUtils";
 
 const TokenManagement = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -82,7 +83,57 @@ const TokenManagement = () => {
   };
 
   const handleDownloadHistory = () => {
-    toast.success("Download do histórico iniciado!");
+    try {
+      // Validar se há dados
+      if (!validateCSVData(rechargeHistory)) {
+        toast.error("Não há dados disponíveis para download");
+        return;
+      }
+
+      toast.info("Gerando arquivo CSV...");
+
+      // Definir colunas do CSV
+      const columns: CSVColumn[] = [
+        {
+          header: 'Data de Registro (ISO 8601)',
+          key: 'date',
+          formatter: (value: any) => value ? formatDateISO(value) : ''
+        },
+        {
+          header: 'Plano Contratado',
+          key: 'plan',
+          formatter: (value: any) => value || 'N/A'
+        },
+        {
+          header: 'Quantidade de Tokens Disponíveis',
+          key: 'tokens',
+          formatter: (value: any) => value ? value.toString() : '0'
+        },
+        {
+          header: 'Valor Monetário Associado',
+          key: 'value',
+          formatter: (value: any) => value ? formatCurrency(value) : 'R$ 0,00'
+        }
+      ];
+
+      // Preparar dados para CSV
+      const csvData = rechargeHistory.map(item => ({
+        date: item.date,
+        plan: item.plan,
+        tokens: item.tokens,
+        value: item.value
+      }));
+
+      // Gerar e baixar CSV
+      downloadCSV(csvData, columns, {
+        filename: 'registro_tokens.csv'
+      });
+
+      toast.success("Download concluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao gerar CSV:", error);
+      toast.error("Erro ao gerar arquivo CSV");
+    }
   };
 
   return (

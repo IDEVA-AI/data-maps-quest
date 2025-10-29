@@ -152,11 +152,6 @@ const Dashboard = () => {
     navigate(`/consulta/${consultaId}`);
   };
 
-  const handleDownload = (consultaId: number) => {
-    toast.success(`Download iniciado para consulta ${consultaId}!`);
-    // TODO: Implementar download real dos dados
-  };
-
   // Filter consultas based on selected filters
   const filteredConsultas = consultas.filter((consulta) => {
     if (filterCategory !== "all" && consulta.category !== filterCategory) {
@@ -430,23 +425,14 @@ const Dashboard = () => {
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
                       {consulta.resultsCount > 0 ? (
-                        <>
-                          <Button
-                            onClick={() => handleViewDetails(consulta.id)}
-                            variant="outline"
-                            className="w-full sm:w-auto group-hover:border-primary/30 transition-colors"
-                          >
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            Ver Detalhes
-                          </Button>
-                          <Button
-                            onClick={() => handleDownload(consulta.id)}
-                            className="w-full sm:w-auto shadow-md hover:shadow-glow transition-all"
-                          >
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                          </Button>
-                        </>
+                        <Button
+                          onClick={() => handleViewDetails(consulta.id)}
+                          variant="outline"
+                          className="w-full sm:w-auto group-hover:border-primary/30 transition-colors"
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Ver Detalhes
+                        </Button>
                       ) : (
                         <Button disabled className="w-full sm:w-auto" variant="outline">
                           Não possui dados

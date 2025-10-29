@@ -68,7 +68,7 @@ const DisparoConsulta = () => {
 
   // Converter resultados em contatos
   const convertResultadosToContatos = (resultados: Resultado[]): ContatoFromResultado[] => {
-    return resultados.map((resultado) => {
+    const contatos = resultados.map((resultado) => {
       const rawTemplate = (resultado as any).template ??
         "Olá, \n \n Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. \n \n Qual seria o melhor horário para agendarmos uma breve demonstração? \n \n Atenciosamente, \n Equipe IDEVA(Especialistas em Automação de Sistemas)";
       const normalizedTemplate = rawTemplate.replace(/\\r?\\n/g, "\n");
@@ -79,9 +79,12 @@ const DisparoConsulta = () => {
         telefone: (resultado as any).telefone ?? "",
         endereco: (resultado as any).endereco ?? "",
         template: normalizedTemplate,
-        status: 'Pendente'
+        status: 'Pendente' as 'Pendente' | 'Enviado' | 'Erro'
       };
     });
+    
+    // Ordenar contatos alfabeticamente por nome da empresa
+    return contatos.sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR', { sensitivity: 'base' }));
   };
 
 

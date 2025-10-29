@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { consultaService, resultadoService, Resultado, authService } from "@/services";
+import { supabase } from "@/lib/supabase";
 
 // Interface para contatos baseada nos resultados
 interface ContatoFromResultado {
@@ -172,19 +173,63 @@ const DisparoConsulta = () => {
     }
   };
 
+  // Webhook de disparo
+  const WEBHOOK_URL = "https://n8n.ideva.ai/webhook/disparo-lead-radar";
+
+  // Helpers de validação e transformação
+  const normalizeNumero = (telefone: string) => telefone?.trim();
+  const isValidContato = (c: ContatoFromResultado) => {
+    return Boolean(c?.telefone && c?.template?.trim() && c?.empresa?.trim());
+  };
+  const toWebhookItem = (c: ContatoFromResultado) => ({
+    id_resultado: c.id,
+    numero: normalizeNumero(c.telefone),
+    template: c.template.trim(),
+    nome: c.empresa.trim(),
+  });
+
   const handleSendMessage = async (contatoId: number) => {
     setIsSendingMessage(contatoId);
     try {
-      // Simular envio de mensagem
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const contato = contatos.find((c) => c.id === contatoId);
+      if (!contato) {
+        toast.error("Contato não encontrado.");
+        return;
+      }
+
+      if (!isValidContato(contato)) {
+        toast.error("Dados do contato inválidos: verifique telefone, nome e template.");
+        return;
+      }
+
+      const payload = [toWebhookItem(contato)];
+      toast.info("Iniciando disparo para o contato...");
+      console.log("Payload individual:", JSON.stringify(payload, null, 2));
+
+      // Invoca a função Edge que atua como proxy
+      const { data, error } = await supabase.functions.invoke("relay-disparo", {
+        body: payload,
+      });
+
+      if (error) {
+        throw new Error(`Erro da função Edge: ${error.message}`);
+      }
+
+      console.log("Resposta da função:", data);
       
-      setContatos(prev => prev.map(c => 
-        c.id === contatoId ? { ...c, status: 'Enviado' as const } : c
-      ));
-      
+      // Atualiza o status no banco de dados
+      await disparoService.updateStatusDisparo(contato.id_resultado, "Enviado");
+      setContatos((prev) =>
+        prev.map((c) => (c.id === contatoId ? { ...c, status: "Enviado" as const } : c))
+      );
       toast.success("Mensagem enviada com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao enviar mensagem");
+    } catch (error: any) {
+      console.error("Erro ao enviar mensagem:", error);
+      setContatos((prev) =>
+        prev.map((c) => (c.id === contatoId ? { ...c, status: "Erro" as const } : c))
+      );
+      const errMsg = error?.message || 'Erro ao enviar mensagem';
+      toast.error(errMsg);
     } finally {
       setIsSendingMessage(null);
     }
@@ -193,18 +238,60 @@ const DisparoConsulta = () => {
   const handleSendAllMessages = async () => {
     setIsSendingAll(true);
     try {
-      const pendingContatos = contatos.filter(c => c.status === 'Pendente');
-      
-      // Simular envio de todas as mensagens
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      setContatos(prev => prev.map(contato => 
-        contato.status === 'Pendente' ? { ...contato, status: 'Enviado' as const } : contato
-      ));
-      
-      toast.success(`${pendingContatos.length} mensagens enviadas com sucesso!`);
-    } catch (error) {
-      toast.error("Erro ao enviar mensagens");
+      // Mantém comportamento atual do UI: enviar somente pendentes
+      const pendingContatos = contatos.filter((c) => c.status === "Pendente");
+      if (pendingContatos.length === 0) {
+        toast.info("Não há contatos pendentes para envio.");
+        return;
+      }
+
+      const validContatos = pendingContatos.filter(isValidContato);
+      const invalidCount = pendingContatos.length - validContatos.length;
+      if (invalidCount > 0) {
+        toast.warning(`${invalidCount} contato(s) ignorado(s) por dados inválidos.`);
+      }
+      if (validContatos.length === 0) {
+        toast.error("Nenhum contato válido para envio. Revise telefone, nome e template.");
+        return;
+      }
+
+      const payload = validContatos.map(toWebhookItem);
+      toast.info(`Iniciando disparo para ${validContatos.length} contato(s)...`);
+      console.log("Payload em massa:", JSON.stringify(payload, null, 2));
+
+      // Invoca a função Edge que atua como proxy
+      const { data, error } = await supabase.functions.invoke("relay-disparo", {
+        body: payload,
+      });
+
+      if (error) {
+        throw new Error(`Erro da função Edge: ${error.message}`);
+      }
+
+      console.log("Resposta da função em massa:", data);
+
+      // Atualiza apenas os pendentes válidos como enviados
+      const validIds = new Set(validContatos.map((c) => c.id));
+      setContatos((prev) =>
+        prev.map((contato) =>
+          validIds.has(contato.id) && contato.status === "Pendente"
+            ? { ...contato, status: "Enviado" as const }
+            : contato
+        )
+      );
+
+      toast.success(`${validContatos.length} mensagem(ns) enviada(s) com sucesso!`);
+    } catch (error: any) {
+      console.error("Erro ao enviar mensagens:", error);
+      // Marca pendentes como erro somente se eram válidos e tentados
+      setContatos((prev) =>
+        prev.map((contato) =>
+          contato.status === "Pendente" && isValidContato(contato)
+            ? { ...contato, status: "Erro" as const }
+            : contato
+        )
+      );
+      toast.error(error?.message || "Erro ao enviar mensagens");
     } finally {
       setIsSendingAll(false);
     }

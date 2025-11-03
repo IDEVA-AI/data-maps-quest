@@ -98,22 +98,10 @@ const Dashboard = () => {
         return;
       }
 
-      // Enviar categoria, localização e id_usuario para webhook
-      try {
-        await fetch('https://n8n.ideva.ai/webhook/8a02919e-2c76-472f-a5ef-649ee059315e', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            category: category.trim(), 
-            location: location.trim(),
-            id_usuario: currentUser.id_usuario
-          })
-        });
-      } catch (whErr) {
-        console.warn('Falha ao enviar webhook:', whErr);
-      }
+      // Gerar identificador único para evitar duplicações
+      const requestId = `${currentUser.id_usuario}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Create new consulta
+      // Create new consulta PRIMEIRO (para evitar duplicação do webhook)
       const newConsulta = {
         category: category.trim(),
         location: location.trim(),
@@ -127,6 +115,23 @@ const Dashboard = () => {
       const response = await consultaService.createConsulta(newConsulta);
       
       if (response.success && response.data) {
+        // Enviar para webhook APÓS criar a consulta, incluindo o ID da consulta criada
+        try {
+          await fetch('https://n8n.ideva.ai/webhook/8a02919e-2c76-472f-a5ef-649ee059315e', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              category: category.trim(), 
+              location: location.trim(),
+              id_usuario: currentUser.id_usuario,
+              consulta_id: response.data.id,
+              request_id: requestId
+            })
+          });
+        } catch (whErr) {
+          console.warn('Falha ao enviar webhook:', whErr);
+        }
+
         toast.success("Busca iniciada! 15 tokens debitados.");
         setCategory("");
         setLocation("");

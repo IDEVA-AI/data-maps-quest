@@ -7,13 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 const Register = () => {
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
     senha: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    cupom: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -91,7 +93,8 @@ const Register = () => {
       const success = await register({
         nome: formData.nome.trim(),
         email: formData.email.toLowerCase().trim(),
-        senha: formData.senha
+        senha: formData.senha,
+        cupom: formData.cupom?.trim()
       });
       
       if (success) {
@@ -125,111 +128,130 @@ const Register = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome Completo</Label>
-              <Input
-                id="nome"
-                type="text"
-                placeholder="Seu nome completo"
-                value={formData.nome}
-                onChange={(e) => handleInputChange("nome", e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
-              <div className="relative">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Seção: Dados pessoais */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Dados pessoais</h3>
+              <Separator />
+              <div className="space-y-2">
+                <Label htmlFor="nome">Nome Completo</Label>
                 <Input
-                  id="senha"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Sua senha"
-                  value={formData.senha}
-                  onChange={(e) => handleInputChange("senha", e.target.value)}
+                  id="nome"
+                  type="text"
+                  placeholder="Seu nome completo"
+                  value={formData.nome}
+                  onChange={(e) => handleInputChange("nome", e.target.value)}
                   required
                   disabled={isLoading}
-                  className="pr-10"
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
               </div>
-              
-              {formData.senha && (
-                <div className="space-y-1 mt-2 p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm font-medium text-gray-700">Critérios da senha:</p>
-                  <PasswordCriteria met={passwordValidation.minLength} text="Mínimo 8 caracteres" />
-                  <PasswordCriteria met={passwordValidation.hasUpperCase} text="Pelo menos 1 letra maiúscula" />
-                  <PasswordCriteria met={passwordValidation.hasLowerCase} text="Pelo menos 1 letra minúscula" />
-                  <PasswordCriteria met={passwordValidation.hasNumbers} text="Pelo menos 1 número" />
-                  <PasswordCriteria met={passwordValidation.hasSpecialChar} text="Pelo menos 1 caractere especial" />
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Seção: Dados de registro */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Dados de registro</h3>
+              <Separator />
+              <div className="space-y-2">
+                <Label htmlFor="senha">Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="senha"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Sua senha"
+                    value={formData.senha}
+                    onChange={(e) => handleInputChange("senha", e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirme sua senha"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  disabled={isLoading}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+                {formData.senha && (
+                  <div className="space-y-1 mt-2 p-3 bg-gray-50 rounded-md">
+                    <p className="text-sm font-medium text-gray-700">Critérios da senha:</p>
+                    <PasswordCriteria met={passwordValidation.minLength} text="Mínimo 8 caracteres" />
+                    <PasswordCriteria met={passwordValidation.hasUpperCase} text="Pelo menos 1 letra maiúscula" />
+                    <PasswordCriteria met={passwordValidation.hasLowerCase} text="Pelo menos 1 letra minúscula" />
+                    <PasswordCriteria met={passwordValidation.hasNumbers} text="Pelo menos 1 número" />
+                    <PasswordCriteria met={passwordValidation.hasSpecialChar} text="Pelo menos 1 caractere especial" />
+                  </div>
+                )}
               </div>
-              {formData.confirmPassword && formData.senha !== formData.confirmPassword && (
-                <p className="text-sm text-red-600">As senhas não coincidem</p>
-              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirme sua senha"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {formData.confirmPassword && formData.senha !== formData.confirmPassword && (
+                  <p className="text-sm text-red-600">As senhas não coincidem</p>
+                )}
+              </div>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-md">
-              <p className="text-sm text-blue-800">
-                <strong>Perfil:</strong> Sua conta será criada com o perfil de "Analista"
-              </p>
+            {/* Seção: Cupom */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Cupom</h3>
+              <Separator />
+              <div className="space-y-2">
+                <Label htmlFor="cupom">Cupom de desconto (opcional)</Label>
+                <Input
+                  id="cupom"
+                  type="text"
+                  placeholder="Insira seu cupom"
+                  value={formData.cupom}
+                  onChange={(e) => handleInputChange("cupom", e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             <Button 

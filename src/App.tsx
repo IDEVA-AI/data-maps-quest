@@ -17,6 +17,7 @@ import ConsultaDetalhes from "./pages/ConsultaDetalhes";
 import Disparo from "./pages/Disparo";
 import DisparoConsulta from "./pages/DisparoConsulta";
 import NotFound from "./pages/NotFound";
+import Maintenance from "./pages/Maintenance";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +33,12 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register-plan" element={<RegisterWithPlan />} />
-            <Route path="/" element={<Navigate to="/consulta" replace />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/maintenance" element={
+              <ProtectedRoute>
+                <Maintenance />
+              </ProtectedRoute>
+            } />
             <Route path="/consulta" element={
               <ProtectedRoute>
                 <Layout><Dashboard /></Layout>

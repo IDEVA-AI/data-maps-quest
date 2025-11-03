@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, validateSession } = useAuth();
+  const { isAuthenticated, isLoading, validateSession, user } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -33,6 +33,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Se autenticado mas sem permissão (perfil cliente), redireciona para manutenção
+  const isRestrictedClient = user && user.perfil !== 'admin' && user.perfil !== 'analista';
+  if (isRestrictedClient && location.pathname !== '/maintenance') {
+    return <Navigate to="/maintenance" replace />;
   }
 
   // Render protected content if authenticated

@@ -18,6 +18,7 @@ export interface RegisterData {
   nome: string;
   email: string;
   senha: string;
+  cupom?: string;
 }
 
 export interface AuthResponse {
@@ -90,6 +91,29 @@ class AuthService {
       // Hash da senha
       const hashedPassword = await this.hashPassword(data.senha);
 
+      // Regras de cupom:
+      // - Se cupom foi informado: só cadastra se existir e estiver ativo (perfil analista).
+      //   Caso contrário, retornar erro de cupom inválido/inativo.
+      // - Se cupom vazio: cadastra como cliente.
+      let perfil: 'analista' | 'cliente' = 'cliente';
+      const cupomValor = data.cupom?.trim();
+      if (cupomValor && cupomValor.length > 0) {
+        const { data: cupomRow, error: cupomError } = await supabase
+          .from('cupom')
+          .select('id, active')
+          .eq('cupom', cupomValor)
+          .eq('active', true)
+          .single();
+
+        if (cupomError || !cupomRow) {
+          return { success: false, error: 'Cupom inválido ou inativo' };
+        }
+
+        perfil = 'analista';
+      } else {
+        perfil = 'cliente';
+      }
+
       // Inserir usuário
       const { data: newUser, error } = await supabase
         .from('usuarios')
@@ -97,7 +121,7 @@ class AuthService {
           nome: data.nome.trim(),
           email: data.email.toLowerCase(),
           senhahash: hashedPassword,
-          perfil: 'analista' // Sempre atribui perfil de analista
+          perfil
         })
         .select('id_usuario, nome, email, perfil, createdat, lastupdate')
         .single();

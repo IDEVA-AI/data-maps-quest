@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Radar, Search, TrendingUp, Download, Shield, Zap, BarChart, Users } from "lucide-react";
+import LandingCarousel from "@/components/LandingCarousel";
 
 const LandingPage = () => {
   const features = [
@@ -118,6 +119,10 @@ const LandingPage = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tudo que você precisa para encontrar e conquistar novos clientes
           </p>
+          {/* Carrossel pequeno logo abaixo do texto, sem substituir o conteúdo */}
+          <div className="mt-6">
+            <LandingCarousel />
+          </div>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">

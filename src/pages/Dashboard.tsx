@@ -117,7 +117,7 @@ const Dashboard = () => {
       if (response.success && response.data) {
         // Enviar para webhook APÓS criar a consulta, incluindo o ID da consulta criada
         try {
-          await fetch('https://n8n.ideva.ai/webhook/8a02919e-2c76-472f-a5ef-649ee059315e', {
+          await fetch('https://n8n.ideva.ai/webhook/consulta', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

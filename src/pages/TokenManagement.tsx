@@ -101,8 +101,8 @@ const TokenManagement = () => {
     const req = {
       frequency: 'ONE_TIME' as const,
       methods: ['PIX'] as ('PIX' | 'CARD')[],
-      returnUrl: `${window.location.origin}/payment/callback?product_id=${encodeURIComponent(plan.id.toString())}`,
-      completionUrl: `${window.location.origin}/tokens`,
+      returnUrl: `${window.location.origin}/tokens`,
+      completionUrl: `${window.location.origin}/payment/callback?product_id=${encodeURIComponent(plan.id.toString())}`,
       products: [
         {
           externalId: plan.external_id || plan.id,

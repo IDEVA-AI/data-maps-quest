@@ -20,7 +20,7 @@ const PaymentCallback = () => {
     const run = async () => {
       if (processedRef.current) return
 
-      const transactionId = params.get('transaction_id') || ''
+      const transactionId = params.get('transaction_id') || params.get('id') || ''
       const productId = params.get('product_id') || ''
 
       console.log('[PaymentCallback] Starting...', { transactionId, productId, user })
@@ -77,7 +77,12 @@ const PaymentCallback = () => {
         return
       }
 
-      const product = productsResp.data.find(p => p.id === productId)
+      // Tentar por id; se não houver, tentar por external_id vindo do status
+      const productExternalId = (statusResp.data as any)?.productExternalId
+      let product = productsResp.data.find(p => p.id === productId)
+      if (!product && productExternalId) {
+        product = productsResp.data.find(p => p.external_id === productExternalId)
+      }
       if (!product) {
         setError('Produto não encontrado')
         return

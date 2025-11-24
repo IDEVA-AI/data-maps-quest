@@ -285,7 +285,8 @@ const server = http.createServer(async (req, res) => {
       }
       const data = json?.data || json
       const status = data?.status === 'PAID' ? 'paid' : data?.status === 'FAILED' ? 'failed' : 'pending'
-      return send(res, 200, { data: { status, transactionId: data?.id, productId: data?.metadata?.productId } })
+      const productExternalId = Array.isArray(data?.products) && data.products.length ? data.products[0]?.externalId : undefined
+      return send(res, 200, { data: { status, transactionId: data?.id, productId: data?.metadata?.productId, productExternalId } })
     } catch (e) {
       return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
     }

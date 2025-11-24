@@ -1,0 +1,30 @@
+{
+    "id": "log_test_123",
+    "event": "billing.paid",
+    "devMode": true,
+    "data": {
+        "payment": {
+            "amount": 5990,
+            "fee": 80,
+            "method": "PIX"
+        },
+        "billing": {
+            "id": "bill_test_456",
+            "products": [
+                {
+                    "externalId": "2541e564-ed5d-4046-b8d4-1b3d63183e77",
+                    "name": "345 tokens",
+                    "quantity": 1,
+                    "price": 3450
+                }
+            ],
+            "customer": {
+                "id": "cust_test",
+                "metadata": {
+                    "name": "IGOR GABRIEL",
+                    "email": "igor.gabrielg@gmail.com"
+                }
+            }
+        }
+    }
+}

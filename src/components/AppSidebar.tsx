@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { tokenService } from "@/services/tokenService";
 
 const items = [
   { title: "Consultas", url: "/consulta", icon: Search },
@@ -28,8 +30,17 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [userTokens, setUserTokens] = useState<number>(0);
   const currentPath = location.pathname;
-  const userTokens = 15; // Mock - will be replaced with real data
+  useEffect(() => {
+    const load = async () => {
+      if (user) {
+        const resp = await tokenService.getBalance(user.id_usuario)
+        if (resp.success && resp.data) setUserTokens(resp.data.tokens)
+      }
+    }
+    load()
+  }, [user])
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = (active: boolean) =>

@@ -18,6 +18,8 @@ import Disparo from "./pages/Disparo";
 import DisparoConsulta from "./pages/DisparoConsulta";
 import NotFound from "./pages/NotFound";
 import Maintenance from "./pages/Maintenance";
+import SeedCupom from "./pages/SeedCupom";
+import PaymentCallback from "./pages/PaymentCallback";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/home" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/admin/seed-cupom" element={<SeedCupom />} />
+            <Route path="/payment/callback" element={<PaymentCallback />} />
             <Route path="/register-plan" element={<RegisterWithPlan />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/maintenance" element={

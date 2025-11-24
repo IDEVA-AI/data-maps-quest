@@ -5,6 +5,8 @@ export interface Usuario {
   nome: string;
   email: string;
   perfil: string;
+  cpf?: string;
+  telefone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -123,7 +125,7 @@ class AuthService {
           senhahash: hashedPassword,
           perfil
         })
-        .select('id_usuario, nome, email, perfil, createdat, lastupdate')
+        .select('id_usuario, nome, email, perfil, cpf, telefone, createdat, lastupdate')
         .single();
 
       if (error) {
@@ -137,6 +139,8 @@ class AuthService {
         nome: newUser.nome,
         email: newUser.email,
         perfil: newUser.perfil,
+        cpf: newUser.cpf,
+        telefone: newUser.telefone,
         created_at: newUser.createdat,
         updated_at: newUser.lastupdate
       };
@@ -186,10 +190,12 @@ class AuthService {
         nome: user.nome,
         email: user.email,
         perfil: user.perfil,
+        cpf: user.cpf,
+        telefone: user.telefone,
         created_at: user.createdat,
         updated_at: user.lastupdate
       };
-      
+
       this.currentUser = mappedUser;
       this.saveUserToStorage(mappedUser);
 
@@ -231,7 +237,7 @@ class AuthService {
     try {
       const userStr = localStorage.getItem('user');
       const token = localStorage.getItem('authToken');
-      
+
       if (userStr && token) {
         const user = JSON.parse(userStr);
         this.currentUser = user;
@@ -257,7 +263,7 @@ class AuthService {
       // Verificar se usuário ainda existe no banco
       const { data, error } = await supabase
         .from('usuarios')
-        .select('id_usuario, nome, email, perfil, createdat, lastupdate')
+        .select('id_usuario, nome, email, perfil, cpf, telefone, createdat, lastupdate')
         .eq('id_usuario', user.id_usuario)
         .single();
 
@@ -275,6 +281,8 @@ class AuthService {
         nome: data.nome,
         email: data.email,
         perfil: data.perfil,
+        cpf: data.cpf,
+        telefone: data.telefone,
         created_at: data.createdat,
         updated_at: data.lastupdate
       };
@@ -308,7 +316,7 @@ class AuthService {
         .from('usuarios')
         .update(updates)
         .eq('id_usuario', currentUser.id_usuario)
-        .select('id_usuario, nome, email, perfil, createdat, lastupdate')
+        .select('id_usuario, nome, email, perfil, cpf, telefone, createdat, lastupdate')
         .single();
 
       if (error) {
@@ -321,6 +329,8 @@ class AuthService {
         nome: updatedUser.nome,
         email: updatedUser.email,
         perfil: updatedUser.perfil,
+        cpf: updatedUser.cpf,
+        telefone: updatedUser.telefone,
         created_at: updatedUser.createdat,
         updated_at: updatedUser.lastupdate
       };

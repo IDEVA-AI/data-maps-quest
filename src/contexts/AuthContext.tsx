@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService, Usuario, LoginCredentials, RegisterData } from '@/services/authService';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface AuthContextType {
   user: Usuario | null;
@@ -61,6 +62,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.login(credentials);
       
       if (response.success && response.data) {
+        try {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.senha
+          });
+          if (signInError) {
+            console.log({ level: 'error', action: 'supabase_auth_signin_error', error: signInError.message });
+          }
+          if (signInError) {
+            const { error: signUpError } = await supabase.auth.signUp({
+              email: credentials.email,
+              password: credentials.senha
+            });
+            if (signUpError) {
+              console.log({ level: 'error', action: 'supabase_auth_signup_error', error: signUpError.message });
+            }
+            if (!signUpError) {
+              await supabase.auth.signInWithPassword({
+                email: credentials.email,
+                password: credentials.senha
+              });
+            }
+          }
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log({ level: 'info', action: 'supabase_auth_session_after_login', session: Boolean(sessionData.session) });
+        } catch {}
         setUser(response.data);
         toast.success(`Bem-vindo, ${response.data.nome}!`);
         return true;
@@ -83,6 +110,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.register(data);
       
       if (response.success && response.data) {
+        try {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.senha
+          });
+          if (signUpError) {
+            console.log({ level: 'error', action: 'supabase_auth_signup_error', error: signUpError.message });
+          }
+          if (signUpError) {
+            await supabase.auth.signInWithPassword({
+              email: data.email,
+              password: data.senha
+            });
+          }
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log({ level: 'info', action: 'supabase_auth_session_after_register', session: Boolean(sessionData.session) });
+        } catch {}
         setUser(response.data);
         toast.success(`Conta criada com sucesso! Bem-vindo, ${response.data.nome}!`);
         return true;

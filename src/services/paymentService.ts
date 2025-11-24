@@ -77,7 +77,7 @@ class PaymentService {
       if (!resp.ok) {
         const text = await resp.text().catch(() => '')
         console.log({ level: 'error', action: 'edge_status_http_error', status: resp.status, statusText: resp.statusText, body: text })
-        return { success: false, error: 'Falha HTTP ao consultar status' }
+        return { success: false, error: text || 'Falha HTTP ao consultar status' }
       }
       const json = await resp.json()
       const data = json?.data || json

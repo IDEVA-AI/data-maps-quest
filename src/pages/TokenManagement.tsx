@@ -26,7 +26,7 @@ import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 import { productService, Produto } from "@/services/productService";
-import { transacaoService, Transacao } from "@/services/transacaoService";
+import { Transacao, getTransacoesByUserId, getTransacoesByEmailViaProxy } from "@/services/transacaoService";
 
 const TokenManagement = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -65,9 +65,12 @@ const TokenManagement = () => {
     const loadTransactions = async () => {
       if (user) {
         setLoadingTransactions(true);
-        const resp = await transacaoService.getByUserId(user.id_usuario);
-        if (resp.success && resp.data) {
+        const resp = await getTransacoesByUserId(user.id_usuario);
+        if (resp.success && resp.data && resp.data.length > 0) {
           setTransactions(resp.data);
+        } else {
+          const fallback = await getTransacoesByEmailViaProxy(user.email)
+          if (fallback.success && fallback.data) setTransactions(fallback.data)
         }
         setLoadingTransactions(false);
       }

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { paymentService } from '@/services/paymentService'
 import { productService } from '@/services/productService'
-import { transacaoService } from '@/services/transacaoService'
+import { createTransacao } from '@/services/transacaoService'
 import { tokenService } from '@/services/tokenService'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -22,6 +22,7 @@ const PaymentCallback = () => {
 
       let transactionId = params.get('transaction_id') || params.get('id') || params.get('billing_id') || params.get('bill_id') || ''
       let productId = params.get('product_id') || ''
+      console.log('[PaymentCallback] Params:', Array.from(params.entries()))
       if (!transactionId) {
         const last = localStorage.getItem('last_billing_id')
         if (last) transactionId = last
@@ -33,8 +34,8 @@ const PaymentCallback = () => {
 
       console.log('[PaymentCallback] Starting...', { transactionId, productId, user })
 
-      if (!transactionId || !productId) {
-        console.error('[PaymentCallback] Missing params', { transactionId, productId })
+      if (!transactionId) {
+        console.error('[PaymentCallback] Missing transaction id', { transactionId, productId })
         setError('Dados inválidos')
         return
       }
@@ -90,25 +91,27 @@ const PaymentCallback = () => {
       let product = productsResp.data.find(p => p.id === productId)
       if (!product && productExternalId) {
         product = productsResp.data.find(p => p.external_id === productExternalId)
+        if (product) productId = product.id
       }
       if (!product) {
         setError('Produto não encontrado')
         return
       }
 
-      // Criar transação no banco
-      setStatusText('Registrando transação...')
-      const txResp = await transacaoService.create({
-        id_usuario: user.id_usuario,
-        produto_id: productId,
-        valor: product.preco,
-        qtd_tokens: product.qtd_tokens,
-        metodo_pagamento: 'PIX'
-      })
-
-      if (!txResp.success) {
-        console.error('Erro ao registrar transação:', txResp.error)
-        // Continuar mesmo se falhar o registro (para não bloquear o crédito)
+      // Registrar transação caso ainda não tenha sido gravada pelo proxy
+      if (!(statusResp.data as any)?.recorded) {
+        setStatusText('Registrando transação...')
+        const txResp = await createTransacao({
+          id_usuario: user.id_usuario,
+          produto_id: productId,
+          valor: product.preco,
+          qtd_tokens: product.qtd_tokens,
+          metodo_pagamento: 'PIX'
+        })
+        if (!txResp.success) {
+          console.error('Erro ao registrar transação:', txResp.error)
+          // Continuar mesmo se falhar o registro (para não bloquear o crédito)
+        }
       }
 
       // Creditar tokens

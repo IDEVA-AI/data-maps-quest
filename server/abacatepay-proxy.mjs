@@ -24,7 +24,7 @@ const API_BASE = process.env.ABACATEPAY_API_BASE || process.env.VITE_ABACATEPAY_
 // Supabase client – usa a Service‑role quando disponível
 const supabaseUrl = process.env.VITE_SUPABASE_URL
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || process.env.SERVICE_KEY
 export const supabase = createClient(
   supabaseUrl,
   supabaseServiceKey || supabaseAnonKey,
@@ -269,7 +269,7 @@ const server = http.createServer(async (req, res) => {
       const transactionId = String(body?.transactionId || '')
       if (!transactionId) return send(res, 400, { data: null, error: 'Missing transactionId' })
 
-      const apiResp = await fetch(`${API_BASE}/billing/get?id=${encodeURIComponent(transactionId)}`, {
+      const apiResp = await fetch(`${API_BASE}/billing/list`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${API_KEY}`
@@ -283,10 +283,124 @@ const server = http.createServer(async (req, res) => {
         const err = json?.error || text || `Status failed (${apiResp.status})`
         return send(res, apiResp.status, { data: null, error: err })
       }
-      const data = json?.data || json
-      const status = data?.status === 'PAID' ? 'paid' : data?.status === 'FAILED' ? 'failed' : 'pending'
-      const productExternalId = Array.isArray(data?.products) && data.products.length ? data.products[0]?.externalId : undefined
-      return send(res, 200, { data: { status, transactionId: data?.id, productId: data?.metadata?.productId, productExternalId } })
+      const list = json?.data || json
+      const bill = Array.isArray(list) ? list.find(b => b?.id === transactionId) : null
+      if (!bill) {
+        return send(res, 404, { data: null, error: 'Not Found' })
+      }
+      const status = bill?.status === 'PAID' ? 'paid' : bill?.status === 'FAILED' ? 'failed' : 'pending'
+      const productExternalId = Array.isArray(bill?.products) && bill.products.length ? bill.products[0]?.externalId : undefined
+
+      let recorded = false
+      if (status === 'paid' && supabaseServiceKey) {
+        try {
+          const email = bill?.customer?.metadata?.email
+          const { data: userRow } = await supabase
+            .from('usuarios')
+            .select('id_usuario')
+            .eq('email', email)
+            .single()
+
+          if (userRow && productExternalId) {
+            const { data: productRow } = await supabase
+              .from('produto')
+              .select('id, preco, qtd_tokens')
+              .eq('external_id', productExternalId)
+              .single()
+
+            if (productRow) {
+              const recentISO = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+              const { data: existing } = await supabase
+                .from('transacoes')
+                .select('id_transacao')
+                .eq('id_usuario', userRow.id_usuario)
+                .eq('produto_id', productRow.id)
+                .eq('valor', productRow.preco)
+                .eq('qtd_tokens', productRow.qtd_tokens)
+                .gte('created_at', recentISO)
+                .limit(1)
+
+              if (!existing || existing.length === 0) {
+                const { error: insertError } = await supabase
+                  .from('transacoes')
+                  .insert({
+                    id_usuario: userRow.id_usuario,
+                    produto_id: productRow.id,
+                    valor: productRow.preco,
+                    qtd_tokens: productRow.qtd_tokens,
+                    metodo_pagamento: 'PIX'
+                  })
+                if (!insertError) recorded = true
+              } else {
+                recorded = true
+              }
+            }
+          }
+        } catch {}
+      }
+
+      return send(res, 200, { data: { status, transactionId: bill?.id, productId: bill?.metadata?.productId, productExternalId, recorded } })
+    } catch (e) {
+      return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
+    }
+  }
+
+  if (u.pathname === '/api/abacatepay/transactions') {
+    if (req.method !== 'POST') return methodNotAllowed(res)
+    if (!supabaseServiceKey) return send(res, 500, { data: null, error: 'Missing service role key' })
+    try {
+      const body = await readBody(req)
+      const email = String(body?.email || '')
+      const userId = body?.userId
+      if (!email && !userId) return send(res, 400, { data: null, error: 'Missing email or userId' })
+
+      let uid = userId
+      if (!uid && email) {
+        const { data: userRow, error: userErr } = await supabase
+          .from('usuarios')
+          .select('id_usuario')
+          .eq('email', email)
+          .single()
+        if (userErr || !userRow) return send(res, 404, { data: null, error: 'User not found' })
+        uid = userRow.id_usuario
+      }
+
+      const { data, error } = await supabase
+        .from('transacoes')
+        .select('*')
+        .eq('id_usuario', uid)
+        .order('created_at', { ascending: false })
+      if (error) return send(res, 500, { data: null, error: error.message })
+
+      const ids = Array.from(new Set((data || [])
+        .map(r => r.produto_id || r.id_produto)
+        .filter(Boolean)))
+
+      let productMap = {}
+      if (ids.length > 0) {
+        const { data: prods } = await supabase
+          .from('produto')
+          .select('id, preco, qtd_tokens')
+          .in('id', ids)
+        productMap = Object.fromEntries((prods || []).map(p => [p.id, p]))
+      }
+
+      const normalized = (data || []).map(r => {
+        const pid = r.produto_id || r.id_produto
+        const p = pid ? productMap[pid] : null
+        return {
+          id_transacao: r.id_transacao,
+          id_usuario: r.id_usuario,
+          produto_id: pid,
+          valor: r.valor ?? p?.preco ?? r.valorpago ?? 0,
+          qtd_tokens: r.qtd_tokens ?? p?.qtd_tokens ?? 0,
+          metodo_pagamento: r.metodo_pagamento ?? r.statuspagamento ?? 'PIX',
+          created_at: r.created_at ?? r.createdat ?? new Date().toISOString(),
+          updated_at: r.updated_at ?? r.lastupdate ?? null
+        }
+      })
+
+      return send(res, 200, { data: normalized })
     } catch (e) {
       return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
     }

@@ -135,6 +135,12 @@ const TokenManagement = () => {
         return
       }
       console.log({ level: 'info', action: 'checkout_redirect', url, transactionId: resp.data.transactionId })
+      try {
+        if (resp.data.transactionId) {
+          localStorage.setItem('last_billing_id', resp.data.transactionId)
+        }
+        localStorage.setItem('last_billing_product_id', plan.id.toString())
+      } catch {}
       window.location.href = url
     } catch (e) {
       console.log({ level: 'error', action: 'checkout_exception', error: e })

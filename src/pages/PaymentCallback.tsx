@@ -20,8 +20,16 @@ const PaymentCallback = () => {
     const run = async () => {
       if (processedRef.current) return
 
-      const transactionId = params.get('transaction_id') || params.get('id') || ''
-      const productId = params.get('product_id') || ''
+      let transactionId = params.get('transaction_id') || params.get('id') || params.get('billing_id') || params.get('bill_id') || ''
+      let productId = params.get('product_id') || ''
+      if (!transactionId) {
+        const last = localStorage.getItem('last_billing_id')
+        if (last) transactionId = last
+      }
+      if (!productId) {
+        const last = localStorage.getItem('last_billing_product_id')
+        if (last) productId = last
+      }
 
       console.log('[PaymentCallback] Starting...', { transactionId, productId, user })
 
@@ -119,6 +127,10 @@ const PaymentCallback = () => {
 
       // Marcar como processado
       localStorage.setItem(txKey, '1')
+      try {
+        localStorage.removeItem('last_billing_id')
+        localStorage.removeItem('last_billing_product_id')
+      } catch {}
       setError(null)
       setCredited(creditResp.data.tokens)
       setStatusText(`Pagamento confirmado! ${product.qtd_tokens} tokens creditados.`)

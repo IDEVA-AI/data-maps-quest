@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { consultaService, resultadoService, Resultado, authService } from "@/services";
+import { consultaService, resultadoService, Resultado, authService, tokenService } from "@/services";
 import { supabase } from "@/lib/supabase";
 
 // Interface para contatos baseada nos resultados
@@ -134,22 +134,54 @@ const DisparoConsulta = () => {
   };
 
   // Funções de template e disparo
+  const WEBHOOK_GENERATE_URL = "https://n8n.ideva.ai/webhook/generate";
+
   const handleGenerateTemplate = async (contatoId: number) => {
     setIsGeneratingTemplate(contatoId);
     try {
       const contato = contatos.find(c => c.id === contatoId);
-      if (!contato) return;
+      if (!contato) {
+        toast.error("Contato não encontrado.");
+        return;
+      }
 
-      // Simular geração de template personalizado
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const newTemplate = `Olá! Sou da [Sua Empresa] e notei que ${contato.empresa} está localizada em ${contato.endereco}. ${contato.rating ? `Com uma excelente avaliação de ${contato.rating} estrelas, ` : ''}gostaria de apresentar nossos serviços que podem agregar ainda mais valor ao seu negócio. Podemos agendar uma conversa rápida?`;
-      
-      setContatos(prev => prev.map(c => 
-        c.id === contatoId ? { ...c, template: newTemplate } : c
-      ));
-      
-      toast.success("Template gerado com sucesso!");
+      const session = await authService.validateSession();
+      if (!session.success || !session.data) {
+        toast.error("Sessão inválida");
+        return;
+      }
+      const userId = session.data.id_usuario;
+
+      const debit = await tokenService.debitViaSupabase({ userId, tokens: 1, source: "generate_template_single" });
+      if (!debit.success) {
+        toast.error(debit.error || "Saldo insuficiente");
+        return;
+      }
+
+      const payload = {
+        consulta_id: Number(id),
+        items: [
+          {
+            id_resultado: contato.id,
+            empresa: contato.empresa,
+            telefone: contato.telefone,
+            template: contato.template,
+          }
+        ]
+      };
+
+      const resp = await fetch(WEBHOOK_GENERATE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) {
+        await tokenService.creditViaSupabase({ userId, tokens: 1, source: "generate_template_rollback" });
+        const text = await resp.text().catch(() => "Erro no webhook");
+        toast.error(text || "Falha ao gerar template via webhook");
+        return;
+      }
+      toast.success("Template enviado para geração (1 item)");
     } catch (error) {
       toast.error("Erro ao gerar template");
     } finally {
@@ -160,15 +192,43 @@ const DisparoConsulta = () => {
   const handleGenerateAllTemplates = async () => {
     setIsGeneratingAll(true);
     try {
-      // Simular geração de templates para todos
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setContatos(prev => prev.map(contato => ({
-        ...contato,
-        template: `Olá! Sou da [Sua Empresa] e notei que ${contato.empresa} está localizada em ${contato.endereco}. ${contato.rating ? `Com uma excelente avaliação de ${contato.rating} estrelas, ` : ''}gostaria de apresentar nossos serviços que podem agregar ainda mais valor ao seu negócio. Podemos agendar uma conversa rápida?`
-      })));
-      
-      toast.success(`Templates gerados para ${contatos.length} contatos!`);
+      const session = await authService.validateSession();
+      if (!session.success || !session.data) {
+        toast.error("Sessão inválida");
+        return;
+      }
+      const userId = session.data.id_usuario;
+
+      const items = resultados.map((r) => ({ ...r }));
+      const count = items.length;
+      if (count <= 0) {
+        toast.info("Nenhum resultado para gerar templates.");
+        return;
+      }
+
+      const debit = await tokenService.debitViaSupabase({ userId, tokens: count, source: "generate_template_all" });
+      if (!debit.success) {
+        toast.error(debit.error || "Saldo insuficiente");
+        return;
+      }
+
+      const payload = {
+        consulta_id: Number(id),
+        items
+      };
+
+      const resp = await fetch(WEBHOOK_GENERATE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) {
+        await tokenService.creditViaSupabase({ userId, tokens: count, source: "generate_template_all_rollback" });
+        const text = await resp.text().catch(() => "Erro no webhook");
+        toast.error(text || "Falha ao gerar templates via webhook");
+        return;
+      }
+      toast.success(`Templates enviados para geração (${count} itens)`);
     } catch (error) {
       toast.error("Erro ao gerar templates");
     } finally {
@@ -504,7 +564,10 @@ const DisparoConsulta = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {contatos.map((contato) => (
+                      {contatos
+                        .slice()
+                        .sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR', { sensitivity: 'base' }))
+                        .map((contato) => (
                         <TableRow key={contato.id}>
                           <TableCell>
                             <div className="space-y-1">

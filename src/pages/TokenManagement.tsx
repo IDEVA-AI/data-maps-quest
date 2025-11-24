@@ -69,7 +69,7 @@ const TokenManagement = () => {
         if (resp.success && resp.data && resp.data.length > 0) {
           setTransactions(resp.data);
         } else {
-          const fallback = await getTransacoesByEmailViaProxy(user.email)
+          const fallback = await getTransacoesByEmailViaProxy(user.email, user.id_usuario)
           if (fallback.success && fallback.data) setTransactions(fallback.data)
         }
         setLoadingTransactions(false);

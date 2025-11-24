@@ -33,6 +33,9 @@ export const supabase = createClient(
   }
 )
 
+console.log('[Proxy] Supabase URL:', supabaseUrl ? 'set' : 'missing')
+console.log('[Proxy] Using service role:', Boolean(supabaseServiceKey))
+
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -118,12 +121,13 @@ const server = http.createServer(async (req, res) => {
       }
 
       const product = products[0]; // Assumindo 1 produto por transação
-      const productId = product.externalId;
+      const productExternalId = product.externalId;
 
+      const customerEmail = customer?.metadata?.email || customer?.email
       console.log('[Webhook] Processing payment:', {
         billingId,
         productId,
-        customerEmail: customer.metadata?.email,
+        customerEmail,
         amount
       })
 
@@ -131,21 +135,21 @@ const server = http.createServer(async (req, res) => {
       const { data: users, error: userError } = await supabase
         .from('usuarios')
         .select('id_usuario')
-        .eq('email', customer.metadata?.email)
+        .eq('email', customerEmail)
         .single()
 
       if (userError || !users) {
-        console.error('[Webhook] User not found:', customer.metadata?.email)
+        console.error('[Webhook] User not found:', customerEmail)
         return send(res, 404, { error: 'User not found' })
       }
 
       const userId = users.id_usuario
 
-      // Buscar produto no banco
+      // Buscar produto no banco pelo external_id
       const { data: productData, error: productError } = await supabase
         .from('produto')
-        .select('*')
-        .eq('id', productId)
+        .select('id, nome, preco, qtd_tokens, external_id')
+        .eq('external_id', productExternalId)
         .single()
 
       if (productError || !productData) {
@@ -160,7 +164,7 @@ const server = http.createServer(async (req, res) => {
         .from('transacoes')
         .insert({
           id_usuario: userId,
-          produto_id: productId,
+          produto_id: productData.id,
           valor: amount,
           qtd_tokens: productData.qtd_tokens,
           metodo_pagamento: body.data?.payment?.method || 'PIX'
@@ -294,7 +298,7 @@ const server = http.createServer(async (req, res) => {
       let recorded = false
       if (status === 'paid' && supabaseServiceKey) {
         try {
-          const email = bill?.customer?.metadata?.email
+          const email = bill?.customer?.metadata?.email || bill?.customer?.email
           const { data: userRow } = await supabase
             .from('usuarios')
             .select('id_usuario')
@@ -340,6 +344,71 @@ const server = http.createServer(async (req, res) => {
       }
 
       return send(res, 200, { data: { status, transactionId: bill?.id, productId: bill?.metadata?.productId, productExternalId, recorded } })
+    } catch (e) {
+      return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
+    }
+  }
+
+  if (u.pathname === '/api/abacatepay/products') {
+    if (req.method !== 'GET' && req.method !== 'POST') return methodNotAllowed(res)
+    try {
+      const { data, error } = await supabase
+        .from('produto')
+        .select('id, nome, preco, qtd_tokens, external_id, validade_dias, eh_popular')
+        .order('preco', { ascending: true })
+      if (error) return send(res, 500, { data: null, error: error.message })
+      return send(res, 200, { data })
+    } catch (e) {
+      return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
+    }
+  }
+
+  if (u.pathname === '/api/abacatepay/users') {
+    if (req.method !== 'GET' && req.method !== 'POST') return methodNotAllowed(res)
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id_usuario, nome, email')
+        .order('id_usuario', { ascending: true })
+        .limit(50)
+      if (error) return send(res, 500, { data: null, error: `${error.message}${error.code ? ` (${error.code})` : ''}` })
+      return send(res, 200, { data })
+    } catch (e) {
+      return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
+    }
+  }
+
+  if (u.pathname === '/api/abacatepay/users/create') {
+    if (req.method !== 'POST') return methodNotAllowed(res)
+    try {
+      const body = await readBody(req)
+      const email = String(body?.email || '').toLowerCase()
+      const nome = String(body?.nome || 'Teste')
+      const perfil = String(body?.perfil || 'cliente')
+      if (!email) return send(res, 400, { data: null, error: 'Missing email' })
+      const nowISO = new Date().toISOString()
+      const ins = await supabase
+        .from('usuarios')
+        .insert({
+          nome,
+          email,
+          senhahash: null,
+          saldotokens: 0,
+          createdat: nowISO,
+          lastupdate: nowISO,
+          active: true,
+          perfil,
+          telefone: ''
+        })
+      if (ins.error) return send(res, 500, { data: null, error: ins.error.message })
+
+      const { data: got, error: selErr } = await supabase
+        .from('usuarios')
+        .select('id_usuario, nome, email, perfil')
+        .eq('email', email)
+        .single()
+      if (selErr || !got) return send(res, 500, { data: null, error: `${selErr?.message || 'Not Found'}${selErr?.code ? ` (${selErr.code})` : ''}` })
+      return send(res, 200, { data: got })
     } catch (e) {
       return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
     }
@@ -401,6 +470,92 @@ const server = http.createServer(async (req, res) => {
       })
 
       return send(res, 200, { data: normalized })
+    } catch (e) {
+      return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
+    }
+  }
+
+  if (u.pathname === '/api/abacatepay/record') {
+    if (req.method !== 'POST') return methodNotAllowed(res)
+    if (!supabaseServiceKey) return send(res, 500, { data: null, error: 'Missing service role key' })
+    try {
+      const body = await readBody(req)
+      const userId = Number(body?.userId)
+      const productId = body?.productId
+      const productExternalId = body?.productExternalId
+      let valor = Number(body?.valor)
+      let qtd_tokens = Number(body?.qtd_tokens)
+      const metodo = String(body?.metodo_pagamento || 'PIX')
+      if (!userId || (!productId && !productExternalId)) {
+        return send(res, 400, { data: null, error: 'Missing required fields' })
+      }
+      if (!supabaseUrl) return send(res, 500, { data: null, error: 'Missing Supabase URL' })
+
+      const { data: pRowById } = productId ? await supabase
+        .from('produto')
+        .select('id, preco, qtd_tokens, external_id')
+        .eq('id', productId)
+        .single() : { data: null }
+
+      const { data: pRowByExternal } = (!pRowById && productExternalId) ? await supabase
+        .from('produto')
+        .select('id, preco, qtd_tokens, external_id')
+        .eq('external_id', productExternalId)
+        .single() : { data: null }
+
+      const pRow = pRowById || pRowByExternal
+      if (!pRow) return send(res, 404, { data: null, error: 'Product not found' })
+      if (!Number.isFinite(valor)) valor = pRow.preco
+      if (!Number.isFinite(qtd_tokens) || qtd_tokens <= 0) qtd_tokens = pRow.qtd_tokens
+
+      // Map plan (legacy) by price or tokens
+      let id_plano = null
+      try {
+        const { data: planByPrice } = await supabase
+          .from('planos')
+          .select('id_plano')
+          .eq('valor', valor)
+          .limit(1)
+        id_plano = planByPrice && planByPrice.length ? planByPrice[0]?.id_plano : null
+        if (!id_plano) {
+          const { data: planByTokens } = await supabase
+            .from('planos')
+            .select('id_plano')
+            .eq('quantidadetokens', qtd_tokens)
+            .limit(1)
+          id_plano = planByTokens && planByTokens.length ? planByTokens[0]?.id_plano : null
+        }
+      } catch {}
+      if (!id_plano) {
+        // Fallback: Starter plan id if available; otherwise 1
+        const { data: starter } = await supabase
+          .from('planos')
+          .select('id_plano')
+          .eq('nome', 'Plano Starter')
+          .limit(1)
+        id_plano = starter && starter.length ? starter[0]?.id_plano : 1
+      }
+
+      const nowISO = new Date().toISOString()
+
+      const { error } = await supabase
+        .from('transacoes')
+        .insert({
+          id_usuario: userId,
+          produto_id: pRow.id,
+          valor: valor,
+          qtd_tokens,
+          metodo_pagamento: metodo,
+          // Legacy columns for compatibility with NOT NULL constraints
+          id_plano: id_plano,
+          valorpago: valor,
+          statuspagamento: metodo,
+          createdat: nowISO,
+          lastupdate: nowISO,
+          active: true
+        })
+      if (error) return send(res, 500, { data: null, error: error.message })
+      return send(res, 200, { data: { recorded: true } })
     } catch (e) {
       return send(res, 500, { data: null, error: e?.message || 'Unexpected error' })
     }

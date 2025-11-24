@@ -12,6 +12,34 @@ export interface BalanceResponse {
 }
 
 class TokenService {
+  async debitViaSupabase(req: CreditRequest): Promise<{ success: boolean; data?: BalanceResponse; error?: string }> {
+    try {
+      const { data: userData, error: fetchError } = await supabase
+        .from('usuarios')
+        .select('saldo_tokens')
+        .eq('id_usuario', req.userId)
+        .single()
+      if (fetchError) {
+        return { success: false, error: 'Erro ao buscar saldo do usuário' }
+      }
+      const currentBalance = userData?.saldo_tokens || 0
+      const cost = Math.abs(req.tokens || 0)
+      if (currentBalance < cost) {
+        return { success: false, error: 'Saldo insuficiente' }
+      }
+      const newBalance = currentBalance - cost
+      const { error: updateError } = await supabase
+        .from('usuarios')
+        .update({ saldo_tokens: newBalance })
+        .eq('id_usuario', req.userId)
+      if (updateError) {
+        return { success: false, error: 'Erro ao atualizar saldo' }
+      }
+      return { success: true, data: { tokens: newBalance } }
+    } catch (e) {
+      return { success: false, error: 'Erro inesperado ao debitar tokens' }
+    }
+  }
   // Creditar tokens via Supabase (para ser chamado pelo webhook ou callback)
   async creditViaSupabase(req: CreditRequest): Promise<{ success: boolean; data?: BalanceResponse; error?: string }> {
     try {
@@ -70,6 +98,28 @@ class TokenService {
       const k = this.key(req.userId)
       const current = parseInt(localStorage.getItem(k) || '0', 10)
       const next = current + (req.tokens || 0)
+      localStorage.setItem(k, String(next))
+      return { success: true, data: { tokens: next } }
+    } catch (e) {
+      return { success: false, error: 'Falha ao atualizar tokens' }
+    }
+  }
+
+  async debit(req: CreditRequest): Promise<{ success: boolean; data?: BalanceResponse; error?: string }> {
+    const supabaseResult = await this.debitViaSupabase(req)
+    if (supabaseResult.success) {
+      const k = this.key(req.userId)
+      if (supabaseResult.data) {
+        localStorage.setItem(k, String(supabaseResult.data.tokens))
+      }
+      return supabaseResult
+    }
+    try {
+      const k = this.key(req.userId)
+      const current = parseInt(localStorage.getItem(k) || '0', 10)
+      const cost = Math.abs(req.tokens || 0)
+      if (current < cost) return { success: false, error: 'Saldo insuficiente' }
+      const next = current - cost
       localStorage.setItem(k, String(next))
       return { success: true, data: { tokens: next } }
     } catch (e) {

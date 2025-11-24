@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { ApiResponse } from './api';
 import { authService } from './authService';
+import { tokenService } from './tokenService';
 
 export interface Consulta {
   id: number;
@@ -391,6 +392,17 @@ class ConsultaService {
 
       const currentUser = sessionValidation.data;
       const nowIso = new Date().toISOString();
+      const cost = 15;
+
+      const bal = await tokenService.getBalance(currentUser.id_usuario)
+      if (!bal.success || !bal.data || bal.data.tokens < cost) {
+        return { success: false, error: 'Saldo insuficiente' };
+      }
+
+      const deb = await tokenService.debitViaSupabase({ userId: currentUser.id_usuario, tokens: cost, source: 'consulta' })
+      if (!deb.success) {
+        return { success: false, error: deb.error || 'Falha ao debitar tokens' };
+      }
       
       const { data, error } = await supabase
         .from('consultas')
@@ -398,7 +410,7 @@ class ConsultaService {
           id_usuario: currentUser.id_usuario,
           parametrocategoria: newConsulta.category,
           parametrolocalidade: newConsulta.location,
-          custotokens: newConsulta.tokensUsed,
+          custotokens: cost,
           createdat: nowIso,
           lastupdate: nowIso,
           active: true
@@ -416,6 +428,7 @@ class ConsultaService {
         .single();
 
       if (error) {
+        await tokenService.creditViaSupabase({ userId: currentUser.id_usuario, tokens: cost, source: 'consulta_rollback' })
         return { success: false, error: error.message };
       }
 

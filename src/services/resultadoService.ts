@@ -13,6 +13,11 @@ export interface Resultado {
   active: boolean;
   createdat: string;
   lastupdate: string;
+  id_resultado?: number;
+  template?: string;
+  empresa?: string;
+  updated_at?: string;
+  status?: string;
 }
 
 export interface ResultadoFilters {
@@ -96,6 +101,41 @@ class ResultadoService {
       return {
         success: false,
         error: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  async hasTemplateColumn(): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('resultados')
+        .select('template')
+        .limit(1);
+      if (error) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async updateResultadoTemplate(id: number, template: string): Promise<ApiResponse<Resultado>> {
+    try {
+      const { data, error } = await supabase
+        .from('resultados')
+        .update({ template, updated_at: new Date().toISOString() })
+        .eq('id_resultado', id)
+        .select('*')
+        .single();
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     }
   }

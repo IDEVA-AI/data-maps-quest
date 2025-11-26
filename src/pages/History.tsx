@@ -115,31 +115,32 @@ const History = () => {
         {
           header: 'Data da Consulta (ISO 8601)',
           key: 'created_at',
-          formatter: (value: any) => value ? formatDateISO(value) : ''
+          formatter: (value: unknown) =>
+            typeof value === 'string' || value instanceof Date ? formatDateISO(value) : ''
         },
         {
           header: 'Hora da Consulta',
           key: 'created_at',
-          formatter: (value: any) => {
-            if (!value) return '';
-            const date = new Date(value);
+          formatter: (value: unknown) => {
+            if (typeof value !== 'string' && !(value instanceof Date)) return '';
+            const date = typeof value === 'string' ? new Date(value) : value;
             return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           }
         },
         {
           header: 'Termo de Busca Utilizado',
           key: 'description',
-          formatter: (value: any) => value || 'N/A'
+          formatter: (value: unknown) => (typeof value === 'string' ? value : 'N/A')
         },
         {
           header: 'Quantidade de Tokens Utilizados',
           key: 'tokensUsed',
-          formatter: (value: any) => value ? value.toString() : '0'
+          formatter: (value: unknown) => (typeof value === 'number' ? value.toString() : '0')
         },
         {
           header: 'Total de Resultados Encontrados',
           key: 'resultsCount',
-          formatter: (value: any) => value ? value.toString() : '0'
+          formatter: (value: unknown) => (typeof value === 'number' ? value.toString() : '0')
         }
       ];
 

@@ -87,7 +87,7 @@ const PaymentCallback = () => {
       }
 
       // Tentar por id; se não houver, tentar por external_id vindo do status
-      const productExternalId = (statusResp.data as any)?.productExternalId
+      const productExternalId = statusResp.data?.productExternalId
       let product = productsResp.data.find(p => p.id === productId)
       if (!product && productExternalId) {
         product = productsResp.data.find(p => p.external_id === productExternalId)
@@ -99,7 +99,7 @@ const PaymentCallback = () => {
       }
 
       // Registrar transação caso ainda não tenha sido gravada pelo proxy
-      if (!(statusResp.data as any)?.recorded) {
+      if (!statusResp.data?.recorded) {
         setStatusText('Registrando transação...')
         const txResp = await createTransacao({
           id_usuario: user.id_usuario,
@@ -133,7 +133,7 @@ const PaymentCallback = () => {
       try {
         localStorage.removeItem('last_billing_id')
         localStorage.removeItem('last_billing_product_id')
-      } catch {}
+      } catch { void 0 }
       setError(null)
       setCredited(creditResp.data.tokens)
       setStatusText(`Pagamento confirmado! ${product.qtd_tokens} tokens creditados.`)

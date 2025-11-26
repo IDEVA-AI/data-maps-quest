@@ -6,7 +6,7 @@
 export interface CSVColumn {
   key: string;
   header: string;
-  formatter?: (value: any) => string;
+  formatter?: (value: unknown) => string;
 }
 
 export interface CSVOptions {
@@ -19,7 +19,7 @@ export interface CSVOptions {
 /**
  * Escapa valores para CSV, lidando com vírgulas, aspas e quebras de linha
  */
-function escapeCSVValue(value: any): string {
+function escapeCSVValue(value: unknown): string {
   if (value === null || value === undefined) {
     return '';
   }
@@ -101,7 +101,7 @@ export function formatCurrency(value: number): string {
  * Gera conteúdo CSV a partir de dados e colunas
  */
 export function generateCSVContent(
-  data: any[],
+  data: Record<string, unknown>[],
   columns: CSVColumn[],
   options: Partial<CSVOptions> = {}
 ): string {
@@ -143,7 +143,7 @@ export function generateCSVContent(
  * Faz download de arquivo CSV
  */
 export function downloadCSV(
-  data: any[],
+  data: Record<string, unknown>[],
   columns: CSVColumn[],
   options: CSVOptions
 ): void {
@@ -180,7 +180,7 @@ export function downloadCSV(
 /**
  * Valida se há dados para exportar
  */
-export function validateCSVData(data: any[]): { isValid: boolean; message?: string } {
+export function validateCSVData(data: unknown[]): { isValid: boolean; message?: string } {
   if (!Array.isArray(data)) {
     return {
       isValid: false,

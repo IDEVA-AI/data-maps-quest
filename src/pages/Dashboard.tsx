@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,13 +29,7 @@ const Dashboard = () => {
   const [canViewUserNames, setCanViewUserNames] = useState(false);
 
   // Load data from database
-  useEffect(() => {
-    checkPermissions();
-    loadConsultas();
-    loadStats();
-  }, [filterCategory, filterDate]);
-
-  const checkPermissions = async () => {
+  const checkPermissions = useCallback(async () => {
     try {
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
@@ -43,9 +37,9 @@ const Dashboard = () => {
       console.error("Erro ao verificar permissões:", error);
       setCanViewUserNames(false);
     }
-  };
+  }, []);
 
-  const loadConsultas = async () => {
+  const loadConsultas = useCallback(async () => {
     try {
       setIsLoading(true);
       const filters = {
@@ -66,9 +60,9 @@ const Dashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filterCategory]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const response = await consultaService.getConsultaStats();
       if (response.success && response.data) {
@@ -77,7 +71,13 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Erro ao carregar estatísticas:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkPermissions();
+    loadConsultas();
+    loadStats();
+  }, [filterCategory, filterDate, checkPermissions, loadConsultas, loadStats]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,10 +143,11 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Erro ao criar consulta:", error);
-      if ((error as any).message?.includes('ERR_CONNECTION_REFUSED') || (error as any).message?.includes('fetch')) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('ERR_CONNECTION_REFUSED') || message.includes('fetch')) {
         toast.error("Servidor não está disponível. Verifique se o backend está rodando.");
       } else {
-        toast.error("Erro ao conectar com o servidor: " + (error as any).message);
+        toast.error("Erro ao conectar com o servidor: " + message);
       }
     } finally {
       setIsSearching(false);

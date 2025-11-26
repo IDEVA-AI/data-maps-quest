@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { consultaService, resultadoService, Resultado, authService, tokenService } from "@/services";
+import { consultaService, resultadoService, Resultado, authService, tokenService, disparoService, Consulta } from "@/services";
 import { supabase } from "@/lib/supabase";
 
 // Interface para contatos baseada nos resultados
@@ -57,7 +57,7 @@ const DisparoConsulta = () => {
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [contatos, setContatos] = useState<ContatoFromResultado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [consulta, setConsulta] = useState<any>(null);
+  const [consulta, setConsulta] = useState<Consulta | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<number | null>(null);
   const [tempTemplate, setTempTemplate] = useState("");
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState<number | null>(null);
@@ -69,28 +69,27 @@ const DisparoConsulta = () => {
   // Converter resultados em contatos
   const convertResultadosToContatos = (resultados: Resultado[]): ContatoFromResultado[] => {
     const contatos = resultados.map((resultado) => {
-      const rawTemplate = (resultado as any).template ??
+      const rawTemplate = resultado.template ??
         "Olá, \n \n Nossa equipe preparou um novo site para a sua empresa e gostaríamos de apresentá-lo, sem nenhum custo ou compromisso. \n \n Qual seria o melhor horário para agendarmos uma breve demonstração? \n \n Atenciosamente, \n Equipe IDEVA(Especialistas em Automação de Sistemas)";
       const normalizedTemplate = rawTemplate.replace(/\\r?\\n/g, "\n");
       return {
-        id: (resultado as any).id_resultado ?? (resultado as any).id,
-        empresa: (resultado as any).nomeempresa ?? (resultado as any).empresa ?? "",
-        email: (resultado as any).email ?? "",
-        telefone: (resultado as any).telefone ?? "",
-        endereco: (resultado as any).endereco ?? "",
+        id: resultado.id_resultado ?? resultado.id,
+        empresa: resultado.nomeempresa ?? resultado.empresa ?? "",
+        email: resultado.email ?? "",
+        telefone: resultado.telefone ?? "",
+        endereco: resultado.endereco ?? "",
+        rating: resultado.rating,
         template: normalizedTemplate,
-        status: 'Pendente' as 'Pendente' | 'Enviado' | 'Erro'
+        status: 'Pendente'
       };
     });
-    
-    // Ordenar contatos alfabeticamente por nome da empresa
     return contatos.sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR', { sensitivity: 'base' }));
   };
 
 
 
   // Check user permissions
-  const checkPermissions = async () => {
+  const checkPermissions = useCallback(async () => {
     try {
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
@@ -98,10 +97,10 @@ const DisparoConsulta = () => {
       console.error("Erro ao verificar permissões:", error);
       setCanViewUserNames(false);
     }
-  };
+  }, []);
 
   // Load data from database
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -131,7 +130,7 @@ const DisparoConsulta = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
   // Funções de template e disparo
   const WEBHOOK_GENERATE_URL = "https://n8n.ideva.ai/webhook/generate";
@@ -280,19 +279,18 @@ const DisparoConsulta = () => {
 
       console.log("Resposta da função:", data);
       
-      // Atualiza o status no banco de dados
-      await disparoService.updateStatusDisparo(contato.id_resultado, "Enviado");
+      await disparoService.updateContatoStatus(contato.id, "Enviado");
       setContatos((prev) =>
         prev.map((c) => (c.id === contatoId ? { ...c, status: "Enviado" as const } : c))
       );
       toast.success("Mensagem enviada com sucesso!");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
       setContatos((prev) =>
         prev.map((c) => (c.id === contatoId ? { ...c, status: "Erro" as const } : c))
       );
-      const errMsg = error?.message || 'Erro ao enviar mensagem';
-      toast.error(errMsg);
+      const message = error instanceof Error ? error.message : 'Erro ao enviar mensagem';
+      toast.error(message);
     } finally {
       setIsSendingMessage(null);
     }
@@ -344,7 +342,7 @@ const DisparoConsulta = () => {
       );
 
       toast.success(`${validContatos.length} mensagem(ns) enviada(s) com sucesso!`);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao enviar mensagens:", error);
       // Marca pendentes como erro somente se eram válidos e tentados
       setContatos((prev) =>
@@ -354,7 +352,8 @@ const DisparoConsulta = () => {
             : contato
         )
       );
-      toast.error(error?.message || "Erro ao enviar mensagens");
+      const message = error instanceof Error ? error.message : "Erro ao enviar mensagens";
+      toast.error(message);
     } finally {
       setIsSendingAll(false);
     }
@@ -407,7 +406,7 @@ const DisparoConsulta = () => {
   useEffect(() => {
     loadData();
     checkPermissions();
-  }, [id]);
+  }, [loadData, checkPermissions]);
 
   const stats = {
     total: contatos.length,

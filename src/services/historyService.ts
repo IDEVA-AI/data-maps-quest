@@ -9,7 +9,7 @@ export interface HistoryEntry {
   description: string;
   entity_id: number;
   entity_type: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   created_at: string;
   user_id?: number;
 }

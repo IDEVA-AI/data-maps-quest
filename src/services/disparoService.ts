@@ -570,7 +570,7 @@ class DisparoService {
   }
 
   // Get disparo history with aggregated data
-  async getDisparoHistory(filters?: DisparoFilters): Promise<ApiResponse<any[]>> {
+  async getDisparoHistory(filters?: DisparoFilters): Promise<ApiResponse<Contato[]>> {
     // For now, return the same as getAllDisparos
     return this.getAllDisparos(filters);
   }

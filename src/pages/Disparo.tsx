@@ -85,7 +85,7 @@ const Disparo = () => {
   // Loading state with modern design
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-subtle">
         <div className="flex items-center justify-center py-32">
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
@@ -103,7 +103,7 @@ const Disparo = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-subtle">
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
         {/* Modern Header with gradient */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white shadow-xl">
@@ -159,7 +159,7 @@ const Disparo = () => {
         </div>
 
         {/* Modern Filters */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-xl">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
@@ -232,7 +232,7 @@ const Disparo = () => {
             {sortedConsultas.map((consulta, index) => (
               <Card 
                  key={consulta.id} 
-                 className="group cursor-pointer border-0 shadow-lg bg-white/90 backdrop-blur-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                 className="group cursor-pointer border-0 shadow-lg bg-card/90 backdrop-blur-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-4"
                  style={{
                    animationDelay: `${index * 100}ms`
                  }}
@@ -283,7 +283,7 @@ const Disparo = () => {
                   
                   {canViewUserNames && consulta.usuario_nome && (
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 px-3 py-2 rounded-lg">
-                      <p className="text-xs text-blue-700">
+                      <p className="text-xs text-black dark:text-white">
                         <Users className="h-3 w-3 inline mr-1" />
                         Por: {consulta.usuario_nome}
                       </p>

@@ -143,7 +143,7 @@ const TokenManagement = () => {
           localStorage.setItem('last_billing_id', resp.data.transactionId)
         }
         localStorage.setItem('last_billing_product_id', plan.id.toString())
-      } catch {}
+      } catch { void 0 }
       window.location.href = url
     } catch (e) {
       console.log({ level: 'error', action: 'checkout_exception', error: e })
@@ -166,22 +166,25 @@ const TokenManagement = () => {
         {
           header: 'Data de Registro (ISO 8601)',
           key: 'date',
-          formatter: (value: any) => value ? formatDateISO(value) : ''
+          formatter: (value: unknown) =>
+            typeof value === 'string' || value instanceof Date ? formatDateISO(value) : ''
         },
         {
           header: 'Quantidade de Tokens',
           key: 'qtd_tokens',
-          formatter: (value: any) => value ? value.toString() + ' tokens' : '0'
+          formatter: (value: unknown) =>
+            typeof value === 'number' ? value.toString() + ' tokens' : '0'
         },
         {
           header: 'Valor Pago',
           key: 'valor',
-          formatter: (value: any) => value ? formatCurrency(value) : 'R$ 0,00'
+          formatter: (value: unknown) =>
+            typeof value === 'number' ? formatCurrency(value) : 'R$ 0,00'
         },
         {
           header: 'Método de Pagamento',
           key: 'metodo_pagamento',
-          formatter: (value: any) => value || 'N/A'
+          formatter: (value: unknown) => (typeof value === 'string' ? value : 'N/A')
         }
       ];
 

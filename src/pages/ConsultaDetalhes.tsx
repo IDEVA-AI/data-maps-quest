@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
-import { resultadoService, consultaService, Resultado, authService } from "@/services";
+import { resultadoService, consultaService, Resultado, authService, Consulta } from "@/services";
 import { downloadCSV, CSVColumn, validateCSVData, formatDateISO, formatDateBR } from "@/utils/csvUtils";
 
 const ConsultaDetalhes = () => {
@@ -22,9 +22,8 @@ const ConsultaDetalhes = () => {
   const [emailFilter, setEmailFilter] = useState("all");
   const [websiteFilter, setWebsiteFilter] = useState("all");
   const [resultados, setResultados] = useState<Resultado[]>([]);
-  const [consulta, setConsulta] = useState<any>(null);
+  const [consulta, setConsulta] = useState<Consulta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
   const [canViewUserNames, setCanViewUserNames] = useState(false);
 
   // Check user permissions

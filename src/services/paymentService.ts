@@ -31,6 +31,8 @@ export interface PaymentStatus {
   status: 'pending' | 'paid' | 'failed'
   transactionId: string
   productId?: string
+  productExternalId?: string
+  recorded?: boolean
 }
 
 class PaymentService {

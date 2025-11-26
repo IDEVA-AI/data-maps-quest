@@ -65,11 +65,12 @@ const RegisterWithPlan = () => {
       setTimeout(() => {
         navigate("/");
       }, 2000);
-    } catch (error: any) {
-      if (error.message && error.message.includes("aguardar 60 segundos")) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : undefined;
+      if (msg && msg.includes("aguardar 60 segundos")) {
         startCooldown(60);
       }
-      toast.error(error.message || "Erro ao criar conta. Tente novamente.");
+      toast.error(msg || "Erro ao criar conta. Tente novamente.");
     }
   };
 

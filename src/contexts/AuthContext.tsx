@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           const { data: sessionData } = await supabase.auth.getSession();
           console.log({ level: 'info', action: 'supabase_auth_session_after_login', session: Boolean(sessionData.session) });
-        } catch {}
+        } catch { void 0 }
         setUser(response.data);
         toast.success(`Bem-vindo, ${response.data.nome}!`);
         return true;
@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           const { data: sessionData } = await supabase.auth.getSession();
           console.log({ level: 'info', action: 'supabase_auth_session_after_register', session: Boolean(sessionData.session) });
-        } catch {}
+        } catch { void 0 }
         setUser(response.data);
         toast.success(`Conta criada com sucesso! Bem-vindo, ${response.data.nome}!`);
         return true;

@@ -171,7 +171,7 @@ const Disparo = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Buscar</label>
+                <label className="text-sm font-medium text-muted-foreground">Buscar</label>
                 <div className="relative group">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                   <Input
@@ -184,7 +184,7 @@ const Disparo = () => {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Categoria</label>
+                <label className="text-sm font-medium text-muted-foreground">Categoria</label>
                 <Select value={filterCategory} onValueChange={setFilterCategory}>
                   <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
                     <SelectValue placeholder="Todas as categorias" />
@@ -201,7 +201,7 @@ const Disparo = () => {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Período</label>
+                <label className="text-sm font-medium text-muted-foreground">Período</label>
                 <Select value={filterDate} onValueChange={setFilterDate}>
                   <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
                     <SelectValue placeholder="Todos os períodos" />
@@ -244,12 +244,12 @@ const Disparo = () => {
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
-                        <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <CardTitle className="text-lg font-semibold text-muted-foreground group-hover:text-primary transition-colors">
                           {consulta.category}
                         </CardTitle>
                       </div>
-                      <CardDescription className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="h-4 w-4 text-blue-500" />
+                      <CardDescription className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4 text-primary" />
                         {consulta.location}
                       </CardDescription>
                       <CardDescription className="text-sm text-gray-500 line-clamp-2">
@@ -266,8 +266,8 @@ const Disparo = () => {
                         <Calendar className="h-3.5 w-3.5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Data</p>
-                        <p className="font-medium text-gray-900">{formatDate(consulta.date)}</p>
+                        <p className="text-xs text-muted-foreground">Data</p>
+                        <p className="font-medium text-foreground">{formatDate(consulta.date)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
@@ -282,10 +282,10 @@ const Disparo = () => {
                   </div>
                   
                   {canViewUserNames && consulta.usuario_nome && (
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 px-3 py-2 rounded-lg">
-                      <p className="text-xs text-black dark:text-white">
-                        <Users className="h-3 w-3 inline mr-1" />
-                        Por: {consulta.usuario_nome}
+                    <div className="px-3 py-2 rounded-lg border border-border bg-secondary">
+                      <p className="text-xs text-foreground">
+                        <Users className="h-3 w-3 inline mr-1 text-foreground" />
+                        Criado por: {consulta.usuario_nome}
                       </p>
                     </div>
                   )}

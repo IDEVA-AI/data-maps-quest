@@ -17,6 +17,7 @@ const Disparo = () => {
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [canViewUserNames, setCanViewUserNames] = useState(false);
+  const [isAnalyst, setIsAnalyst] = useState(false);
 
   // Load consultas from database
   const loadConsultas = async () => {
@@ -53,9 +54,11 @@ const Disparo = () => {
     try {
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
+      setIsAnalyst(authService.isAnalyst());
     } catch (error) {
       console.error("Erro ao verificar permissões:", error);
       setCanViewUserNames(false);
+      setIsAnalyst(false);
     }
   };
 
@@ -252,6 +255,11 @@ const Disparo = () => {
                         <MapPin className="h-4 w-4 text-primary" />
                         {consulta.location}
                       </CardDescription>
+                      {isAnalyst && (
+                        <Badge variant="secondary" className="w-fit border border-secondary/50">
+                          Origem: {consulta.tipo_consulta === 'API' ? 'API' : 'N8N'}
+                        </Badge>
+                      )}
                       <CardDescription className="text-sm text-black dark:text-white line-clamp-2">
                         {consulta.description}
                       </CardDescription>

@@ -34,6 +34,7 @@ const ConsultaApi = () => {
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [isLoadingConsultas, setIsLoadingConsultas] = useState(true);
   const [canViewUserNames, setCanViewUserNames] = useState(false);
+  const [isAnalyst, setIsAnalyst] = useState(false);
 
   useEffect(() => {
     const qpTermo = searchParams.get("termo") || "";
@@ -52,6 +53,7 @@ const ConsultaApi = () => {
       setIsLoadingConsultas(true);
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
+      setIsAnalyst(authService.isAnalyst());
 
       const response = await consultaService.getConsultas();
       if (response.success && response.data) {
@@ -92,7 +94,8 @@ const ConsultaApi = () => {
       // 1. Criar a consulta no banco
       const consultaRes = await consultaService.createConsulta({
         category: termo.trim(),
-        location: localizacao.trim()
+        location: localizacao.trim(),
+        tipo_consulta: 'API'
       });
 
       if (!consultaRes.success || !consultaRes.data) {
@@ -228,6 +231,11 @@ const ConsultaApi = () => {
                           <MapPin className="h-3 w-3 text-primary" />
                           {consulta.location}
                         </Badge>
+                        {isAnalyst && (
+                          <Badge variant="secondary" className="gap-1 border border-secondary/50">
+                            Origem: {consulta.tipo_consulta === 'API' ? 'API' : 'N8N'}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-[0.95rem] text-muted-foreground">
                         <div className="flex items-center gap-1">

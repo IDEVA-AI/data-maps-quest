@@ -13,6 +13,7 @@ export interface Consulta {
   tokensUsed: number;
   status: string;
   description: string;
+  tipo_consulta?: string | null;
   created_at?: string;
   updated_at?: string;
   // Campos do usuário (apenas para admin/analista)
@@ -64,6 +65,7 @@ class ConsultaService {
             createdat,
             lastupdate,
             active,
+            tipo_consulta,
             usuarios!inner(nome, email)
           `);
       } else {
@@ -77,7 +79,8 @@ class ConsultaService {
             custotokens,
             createdat,
             lastupdate,
-            active
+            active,
+            tipo_consulta
           `);
       }
 
@@ -123,6 +126,7 @@ class ConsultaService {
             tokensUsed: consulta.custotokens,
             status: consulta.active ? 'Ativa' : 'Inativa',
             description: `${consulta.parametrocategoria} em ${consulta.parametrolocalidade}`,
+            tipo_consulta: consulta.tipo_consulta,
             created_at: consulta.createdat,
             updated_at: consulta.lastupdate
           };
@@ -180,6 +184,7 @@ class ConsultaService {
             createdat,
             lastupdate,
             active,
+            tipo_consulta,
             usuarios!inner(nome, email)
           `)
           .eq('id_consulta', id);
@@ -194,7 +199,8 @@ class ConsultaService {
             custotokens,
             createdat,
             lastupdate,
-            active
+            active,
+            tipo_consulta
           `)
           .eq('id_consulta', id);
       }
@@ -230,6 +236,7 @@ class ConsultaService {
         tokensUsed: data.custotokens,
         status: data.active ? 'Ativa' : 'Inativa',
         description: `${data.parametrocategoria} em ${data.parametrolocalidade}`,
+        tipo_consulta: data.tipo_consulta,
         created_at: data.createdat,
         updated_at: data.lastupdate
       };
@@ -329,7 +336,8 @@ class ConsultaService {
           custotokens,
           createdat,
           lastupdate,
-          active
+          active,
+          tipo_consulta
         `)
         .eq('id_usuario', currentUser.id_usuario)
         .order('createdat', { ascending: false })
@@ -360,6 +368,7 @@ class ConsultaService {
             tokensUsed: consulta.custotokens,
             status: consulta.active ? 'Ativa' : 'Inativa',
             description: `${consulta.parametrocategoria} em ${consulta.parametrolocalidade}`,
+          tipo_consulta: consulta.tipo_consulta,
             created_at: consulta.createdat,
             updated_at: consulta.lastupdate
           };
@@ -379,7 +388,7 @@ class ConsultaService {
   }
 
   // Create a new consulta (with authenticated user)
-  async createConsulta(newConsulta: { category: string, location: string }): Promise<ApiResponse<Consulta>> {
+  async createConsulta(newConsulta: { category: string; location: string; tipo_consulta?: string | null }): Promise<ApiResponse<Consulta>> {
     try {
       // Validate session first
       const sessionValidation = await authService.validateSession();
@@ -411,6 +420,7 @@ class ConsultaService {
           parametrocategoria: newConsulta.category,
           parametrolocalidade: newConsulta.location,
           custotokens: cost,
+          tipo_consulta: newConsulta.tipo_consulta || null,
           createdat: nowIso,
           lastupdate: nowIso,
           active: true
@@ -423,7 +433,8 @@ class ConsultaService {
           custotokens,
           createdat,
           lastupdate,
-          active
+          active,
+          tipo_consulta
         `)
         .single();
 
@@ -442,6 +453,7 @@ class ConsultaService {
         tokensUsed: data.custotokens,
         status: data.active ? 'Ativa' : 'Inativa',
         description: `${data.parametrocategoria} em ${data.parametrolocalidade}`,
+        tipo_consulta: data.tipo_consulta,
         created_at: data.createdat,
         updated_at: data.lastupdate
       };

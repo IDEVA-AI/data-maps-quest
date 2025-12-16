@@ -65,6 +65,7 @@ const DisparoConsulta = () => {
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isSendingAll, setIsSendingAll] = useState(false);
   const [canViewUserNames, setCanViewUserNames] = useState(false);
+  const [isAnalyst, setIsAnalyst] = useState(false);
 
   // Converter resultados em contatos
   const convertResultadosToContatos = (resultados: Resultado[]): ContatoFromResultado[] => {
@@ -93,9 +94,11 @@ const DisparoConsulta = () => {
     try {
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
+      setIsAnalyst(authService.isAnalyst());
     } catch (error) {
       console.error("Erro ao verificar permissões:", error);
       setCanViewUserNames(false);
+      setIsAnalyst(false);
     }
   }, []);
 
@@ -436,6 +439,13 @@ const DisparoConsulta = () => {
           <p className="text-muted-foreground">
             Gerencie templates e envie mensagens para os contatos encontrados
           </p>
+          {isAnalyst && (
+            <div className="mt-2">
+              <Badge variant="secondary" className="border border-secondary/50">
+                Origem: {consulta?.tipo_consulta === 'API' ? 'API' : 'N8N'}
+              </Badge>
+            </div>
+          )}
           {canViewUserNames && consulta?.usuario_nome && (
             <div className="mt-2">
               <p className="text-sm text-muted-foreground">

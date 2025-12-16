@@ -28,15 +28,18 @@ const Dashboard = () => {
   const [stats, setStats] = useState<ConsultaStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [canViewUserNames, setCanViewUserNames] = useState(false);
+  const [isAnalyst, setIsAnalyst] = useState(false);
 
   // Load data from database
   const checkPermissions = useCallback(async () => {
     try {
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
+      setIsAnalyst(authService.isAnalyst());
     } catch (error) {
       console.error("Erro ao verificar permissões:", error);
       setCanViewUserNames(false);
+      setIsAnalyst(false);
     }
   }, []);
 
@@ -422,6 +425,11 @@ const Dashboard = () => {
                             <MapPin className="h-3 w-3 text-primary" />
                             {consulta.location}
                           </Badge>
+                          {isAnalyst && (
+                            <Badge variant="secondary" className="gap-1 border border-secondary/50">
+                              Origem: {consulta.tipo_consulta === 'API' ? 'API' : 'N8N'}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-[0.95rem] text-muted-foreground">
                           <div className="flex items-center gap-1">

@@ -25,15 +25,18 @@ const ConsultaDetalhes = () => {
   const [consulta, setConsulta] = useState<Consulta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [canViewUserNames, setCanViewUserNames] = useState(false);
+  const [isAnalyst, setIsAnalyst] = useState(false);
 
   // Check user permissions
   const checkPermissions = async () => {
     try {
       const canView = await authService.canViewUserNames();
       setCanViewUserNames(canView);
+      setIsAnalyst(authService.isAnalyst());
     } catch (error) {
       console.error("Erro ao verificar permissões:", error);
       setCanViewUserNames(false);
+      setIsAnalyst(false);
     }
   };
 
@@ -167,6 +170,13 @@ const ConsultaDetalhes = () => {
                 <p className="text-[0.95rem] text-muted-foreground">
                   {consulta?.category} em {consulta?.location}
                 </p>
+                {isAnalyst && (
+                  <div className="mt-2">
+                    <Badge variant="secondary" className="border border-secondary/50">
+                      Origem: {consulta?.tipo_consulta === 'API' ? 'API' : 'N8N'}
+                    </Badge>
+                  </div>
+                )}
                 {canViewUserNames && consulta?.usuario_nome && (
                   <div className="mt-2">
                     <p className="text-[0.9rem] text-muted-foreground">

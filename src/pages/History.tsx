@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Search, Clock, FileText, Zap, Calendar, TrendingUp, Activity, BarChart3, Download } from "lucide-react";
-import { consultaService, Consulta } from "@/services";
+import { consultaService, Consulta, authService } from "@/services";
 import { toast } from "sonner";
 import { downloadCSV, CSVColumn, validateCSVData, formatDateISO } from "@/utils/csvUtils";
 
@@ -19,6 +20,7 @@ interface HistoryEntry {
   resultsCount?: number;
   tokensUsed?: number;
   status?: string;
+  tipo_consulta?: string | null;
 }
 
 interface HistoryStats {
@@ -38,6 +40,7 @@ const History = () => {
   const [historyData, setHistoryData] = useState<HistoryEntry[]>([]);
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAnalyst, setIsAnalyst] = useState(false);
 
   // Carregar dados do histórico usando consultas do Supabase
   const loadHistory = async () => {
@@ -62,7 +65,8 @@ const History = () => {
           location: consulta.location,
           resultsCount: consulta.resultsCount,
           tokensUsed: consulta.tokensUsed,
-          status: consulta.status
+          status: consulta.status,
+          tipo_consulta: consulta.tipo_consulta
         }));
 
         // Ordenar por data mais recente primeiro
@@ -97,6 +101,7 @@ const History = () => {
 
   useEffect(() => {
     loadHistory();
+    setIsAnalyst(authService.isAnalyst());
   }, []);
 
   // Função para download CSV
@@ -374,6 +379,11 @@ const History = () => {
                                 <h3 className="font-semibold text-foreground group-hover/item:text-primary transition-colors duration-200">
                                   {item.description}
                                 </h3>
+                                {isAnalyst && (
+                                  <Badge variant="secondary" className="mt-1 border border-secondary/50 w-fit">
+                                    Origem: {item.tipo_consulta === 'API' ? 'API' : 'N8N'}
+                                  </Badge>
+                                )}
                                 <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                                   <Clock className="h-3 w-3" />
                                   <span>{formatDateTime(item.created_at)}</span>

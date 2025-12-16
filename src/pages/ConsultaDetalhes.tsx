@@ -164,12 +164,12 @@ const ConsultaDetalhes = () => {
               </Button>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Consulta #{id}</h1>
-                <p className="text-muted-foreground">
+                <p className="text-[0.95rem] text-muted-foreground">
                   {consulta?.category} em {consulta?.location}
                 </p>
                 {canViewUserNames && consulta?.usuario_nome && (
                   <div className="mt-2">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-[0.9rem] text-muted-foreground">
                       Por: {consulta.usuario_nome}
                     </p>
                   </div>
@@ -294,7 +294,7 @@ const ConsultaDetalhes = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredResults.map((resultado) => (
-            <Card key={resultado.id} className="hover:shadow-lg transition-shadow">
+            <Card key={resultado.id_resultado ?? resultado.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -310,8 +310,8 @@ const ConsultaDetalhes = () => {
                   </div>
 
                   {resultado.endereco && (
-                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2 text-[0.95rem] text-foreground">
+                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
                       <span className="line-clamp-2">{resultado.endereco}</span>
                     </div>
                   )}

@@ -252,7 +252,7 @@ const Disparo = () => {
                         <MapPin className="h-4 w-4 text-primary" />
                         {consulta.location}
                       </CardDescription>
-                      <CardDescription className="text-sm text-gray-500 line-clamp-2">
+                      <CardDescription className="text-sm text-black dark:text-white line-clamp-2">
                         {consulta.description}
                       </CardDescription>
                     </div>

@@ -38,7 +38,7 @@ const Layout = ({ children }: LayoutProps) => {
           <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-6">
             <SidebarTrigger />
             <div className="flex-1">
-              <h2 className="text-sm font-medium text-muted-foreground">
+              <h2 className="text-sm font-medium text-black dark:text-white">
                 {user ? `Bem-vindo, ${user.nome}` : 'Bem-vindo ao Lead Radar'}
               </h2>
             </div>

@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, CheckCircle, XCircle, Sun, Moon, Radar } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useTheme } from "next-themes";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -22,6 +24,7 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   const validatePassword = (password: string) => {
     const minLength = password.length >= 8;
@@ -112,18 +115,47 @@ const Register = () => {
   };
 
   const PasswordCriteria = ({ met, text }: { met: boolean; text: string }) => (
-    <div className={`flex items-center space-x-2 text-sm ${met ? 'text-green-600' : 'text-gray-500'}`}>
+    <div className={`flex items-center space-x-2 text-sm ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
       {met ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
       <span>{text}</span>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-subtle">
+      <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm">
+        <div className="container mx-auto flex h-14 items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary">
+              <Radar className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold">Lead Radar</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="rounded-full">
+                  {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>Claro</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>Escuro</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="hidden sm:flex items-center gap-2 text-sm">
+              <Link to="/login" className="text-primary hover:underline">Entrar</Link>
+              <span className="text-muted-foreground">•</span>
+              <Link to="/home" className="text-primary hover:underline">Home</Link>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div className="container mx-auto px-4 min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
+        <Card className="w-full max-w-md border-0 bg-card/90 shadow-card">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl font-bold text-center text-foreground">Criar Conta</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
             Preencha os dados abaixo para criar sua conta
           </CardDescription>
         </CardHeader>
@@ -192,8 +224,8 @@ const Register = () => {
                   </Button>
                 </div>
                 {formData.senha && (
-                  <div className="space-y-1 mt-2 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm font-medium text-gray-700">Critérios da senha:</p>
+                  <div className="space-y-1 mt-2 p-3 bg-secondary rounded-md">
+                    <p className="text-sm font-medium text-foreground">Critérios da senha:</p>
                     <PasswordCriteria met={passwordValidation.minLength} text="Mínimo 8 caracteres" />
                     <PasswordCriteria met={passwordValidation.hasUpperCase} text="Pelo menos 1 letra maiúscula" />
                     <PasswordCriteria met={passwordValidation.hasLowerCase} text="Pelo menos 1 letra minúscula" />
@@ -256,7 +288,7 @@ const Register = () => {
 
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90" 
               disabled={isLoading || !passwordValidation.isValid || formData.senha !== formData.confirmPassword}
             >
               {isLoading ? (
@@ -269,15 +301,14 @@ const Register = () => {
               )}
             </Button>
           </form>
-          
-          <div className="mt-4 text-center text-sm">
-            Já tem uma conta?{" "}
-            <Link to="/login" className="text-blue-600 hover:underline">
-              Faça login
-            </Link>
+          <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+            <Link to="/login" className="text-primary hover:underline">Entrar</Link>
+            <span className="text-muted-foreground">•</span>
+            <Link to="/home" className="text-primary hover:underline">Home</Link>
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

@@ -17,6 +17,7 @@ import LandingPage from "./pages/LandingPage";
 import ConsultaDetalhes from "./pages/ConsultaDetalhes";
 import Disparo from "./pages/Disparo";
 import DisparoConsulta from "./pages/DisparoConsulta";
+import ConsultaApi from "./pages/ConsultaApi";
 import NotFound from "./pages/NotFound";
 import Maintenance from "./pages/Maintenance";
 import SeedCupom from "./pages/SeedCupom";
@@ -48,6 +49,11 @@ const App = () => (
             <Route path="/consulta" element={
               <ProtectedRoute>
                 <Layout><Dashboard /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/consulta-api" element={
+              <ProtectedRoute>
+                <Layout><ConsultaApi /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/consulta/:id" element={

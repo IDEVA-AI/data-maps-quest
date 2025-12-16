@@ -20,6 +20,7 @@ import { tokenService } from "@/services/tokenService";
 
 const items = [
   { title: "Consultas", url: "/consulta", icon: Search },
+  { title: "Consultas API", url: "/consulta-api", icon: Search },
   { title: "Disparo", url: "/disparo", icon: Send },
   { title: "Histórico", url: "/history", icon: History },
   { title: "Recargas", url: "/tokens", icon: CreditCard },

@@ -51,7 +51,7 @@ class ConsultaService {
 
       // Build query based on user role
       let consultasQuery;
-      
+
       if (canViewUserNames) {
         consultasQuery = supabase
           .from('consultas')
@@ -167,7 +167,7 @@ class ConsultaService {
 
       // Build query based on user role
       let consultaQuery;
-      
+
       if (canViewUserNames) {
         consultaQuery = supabase
           .from('consultas')
@@ -379,7 +379,7 @@ class ConsultaService {
   }
 
   // Create a new consulta (with authenticated user)
-  async createConsulta(newConsulta: Omit<Consulta, 'id' | 'id_usuario' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Consulta>> {
+  async createConsulta(newConsulta: { category: string, location: string }): Promise<ApiResponse<Consulta>> {
     try {
       // Validate session first
       const sessionValidation = await authService.validateSession();
@@ -403,7 +403,7 @@ class ConsultaService {
       if (!deb.success) {
         return { success: false, error: deb.error || 'Falha ao debitar tokens' };
       }
-      
+
       const { data, error } = await supabase
         .from('consultas')
         .insert({
@@ -451,6 +451,38 @@ class ConsultaService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido'
+      };
+    }
+  }
+  // Save results from API
+  async saveResults(consultaId: number, results: any[]): Promise<ApiResponse<void>> {
+    try {
+      if (!results.length) return { success: true };
+
+      const now = new Date().toISOString();
+      const formattedResults = results.map(r => ({
+        id_consulta: consultaId,
+        nomeempresa: r.nome,
+        endereco: r.endereco,
+        telefone: r.telefone,
+        website: r.website || r.site, // Aceita ambos os campos
+        rating: r.rating || r.nota,
+        active: true,
+        createdat: now,
+        lastupdate: now
+      }));
+
+      const { error } = await supabase
+        .from('resultados')
+        .insert(formattedResults);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro ao salvar resultados'
       };
     }
   }

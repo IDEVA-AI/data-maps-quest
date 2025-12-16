@@ -2,10 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Radar, Search, TrendingUp, Download, Shield, Zap, BarChart, Users } from "lucide-react";
+import { Radar, Search, TrendingUp, Download, Shield, Zap, BarChart, Users, Sun, Moon } from "lucide-react";
 import LandingCarousel from "@/components/LandingCarousel";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useTheme } from "next-themes";
 
 const LandingPage = () => {
+  const { theme, setTheme } = useTheme();
   const features = [
     {
       icon: Search,
@@ -63,6 +66,17 @@ const LandingPage = () => {
             <Button asChild className="shadow-lg hover:shadow-glow">
               <Link to="/register">Começar Grátis</Link>
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="rounded-full">
+                  {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>Claro</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>Escuro</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -147,7 +161,7 @@ const LandingPage = () => {
       </section>
 
       {/* How It Works */}
-      <section className="container mx-auto px-6 py-20 bg-gradient-hero">
+      <section className="container mx-auto px-6 py-20">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
             Como Funciona

@@ -200,15 +200,15 @@ const History = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-subtle">
         <div className="container mx-auto p-6">
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-                <div className="absolute inset-0 h-12 w-12 animate-pulse rounded-full bg-blue-100 opacity-20"></div>
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-muted border-t-primary"></div>
+                <div className="absolute inset-0 h-12 w-12 animate-pulse rounded-full bg-primary/20 opacity-20"></div>
               </div>
-              <span className="text-slate-600 font-medium">Carregando histórico...</span>
+              <span className="text-muted-foreground font-medium">Carregando histórico...</span>
             </div>
           </div>
         </div>
@@ -217,7 +217,7 @@ const History = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-subtle">
       <div className="container mx-auto p-6">
         {/* Header com gradiente */}
         <div className="mb-8">
@@ -239,12 +239,12 @@ const History = () => {
         {/* Cards de estatísticas */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="group relative overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <Card className="group relative overflow-hidden border-0 bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Total de Consultas</p>
-                    <p className="text-3xl font-bold text-slate-900">{stats.consultasCount}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Total de Consultas</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.consultasCount}</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
                     <BarChart3 className="h-6 w-6 text-white" />
@@ -254,12 +254,12 @@ const History = () => {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <Card className="group relative overflow-hidden border-0 bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Tokens Utilizados</p>
-                    <p className="text-3xl font-bold text-slate-900">{stats.totalTokensUsed.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Tokens Utilizados</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.totalTokensUsed.toLocaleString()}</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
                     <Zap className="h-6 w-6 text-white" />
@@ -269,12 +269,12 @@ const History = () => {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <Card className="group relative overflow-hidden border-0 bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Registros Encontrados</p>
-                    <p className="text-3xl font-bold text-slate-900">{stats.totalResults.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Registros Encontrados</p>
+                    <p className="text-3xl font-bold text-foreground">{stats.totalResults.toLocaleString()}</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 flex items-center justify-center">
                     <TrendingUp className="h-6 w-6 text-white" />
@@ -287,10 +287,10 @@ const History = () => {
         )}
 
         {/* Barra de pesquisa moderna */}
-        <Card className="mb-8 border-0 bg-white/80 backdrop-blur-sm shadow-lg">
+        <Card className="mb-8 border-0 bg-card/80 backdrop-blur-sm shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 text-slate-700 font-semibold">
+              <div className="flex items-center gap-3 text-foreground font-semibold">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-slate-600 to-slate-700 flex items-center justify-center">
                   <Search className="h-5 w-5 text-white" />
                 </div>
@@ -301,9 +301,9 @@ const History = () => {
                   placeholder="Buscar por nome da consulta..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-md border-slate-200 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200 pl-4 pr-10"
+                  className="max-w-md border-border bg-background focus:bg-background transition-all duration-200 pl-4 pr-10"
                 />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
               <Button
                 onClick={handleDownloadCSV}
@@ -327,7 +327,7 @@ const History = () => {
             return (
               <Card 
                 key={date} 
-                className="group relative overflow-hidden border-0 bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+                className="group relative overflow-hidden border-0 bg-card/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
                 style={{ animationDelay: `${groupIndex * 100}ms` }}
               >
                 <CardContent className="p-0">
@@ -364,17 +364,17 @@ const History = () => {
                       {entries.map((item, index) => (
                         <div 
                           key={item.id}
-                          className="group/item flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                          className="group/item flex items-center justify-between p-4 rounded-lg bg-secondary hover:bg-secondary/80 transition-all duration-200 border border-border"
                         >
                           {/* Informações da consulta */}
                           <div className="flex-1">
                             <div className="flex items-start gap-3">
                               <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 mt-2 flex-shrink-0"></div>
                               <div className="flex-1">
-                                <h3 className="font-semibold text-slate-900 group-hover/item:text-blue-600 transition-colors duration-200">
+                                <h3 className="font-semibold text-foreground group-hover/item:text-primary transition-colors duration-200">
                                   {item.description}
                                 </h3>
-                                <div className="flex items-center gap-2 mt-1 text-sm text-slate-600">
+                                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                                   <Clock className="h-3 w-3" />
                                   <span>{formatDateTime(item.created_at)}</span>
                                 </div>
@@ -384,16 +384,15 @@ const History = () => {
                           
                           {/* Métricas da consulta */}
                           <div className="flex items-center gap-4 ml-4">
-                            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-blue-100 border border-blue-200">
-                              <FileText className="h-3 w-3 text-blue-600" />
-                              <span className="text-blue-700 font-medium text-sm">
+                            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-primary/10 border border-primary/20">
+                              <FileText className="h-3 w-3 text-primary" />
+                              <span className="text-primary font-medium text-sm">
                                 {item.resultsCount || 0}
                               </span>
                             </div>
-                            
-                            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-purple-100 border border-purple-200">
-                              <Zap className="h-3 w-3 text-purple-600" />
-                              <span className="text-purple-700 font-medium text-sm">
+                            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-secondary/50 border border-border">
+                              <Zap className="h-3 w-3 text-foreground" />
+                              <span className="text-foreground font-medium text-sm">
                                 {item.tokensUsed || 0}
                               </span>
                             </div>
@@ -413,15 +412,15 @@ const History = () => {
 
         {/* Estado vazio com design moderno */}
         {filteredHistory.length === 0 && !isLoading && (
-          <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-lg">
+          <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-lg">
             <CardContent className="p-16 text-center">
               <div className="flex flex-col items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-gradient-to-r from-slate-200 to-slate-300 flex items-center justify-center">
-                  <Activity className="h-8 w-8 text-slate-500" />
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <Activity className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-700 mb-2">Nenhum item encontrado</h3>
-                  <p className="text-slate-500">Tente ajustar os filtros ou realize uma nova consulta.</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum item encontrado</h3>
+                  <p className="text-muted-foreground">Tente ajustar os filtros ou realize uma nova consulta.</p>
                 </div>
               </div>
             </CardContent>

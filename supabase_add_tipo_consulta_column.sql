@@ -4,3 +4,4 @@ alter table if exists public.consultas
 
 comment on column public.consultas.tipo_consulta is 'Origem da consulta (ex: API). Campo vazio indica execução via N8N';
 
+

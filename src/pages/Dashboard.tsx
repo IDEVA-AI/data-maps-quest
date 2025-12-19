@@ -152,6 +152,11 @@ const Dashboard = () => {
     navigate(`/consulta/${consultaId}`);
   };
 
+  const getOriginBadgeClasses = (tipo?: string | null) =>
+    tipo === 'API'
+      ? 'border-blue-600 bg-blue-600 text-white'
+      : 'border-purple-600 bg-purple-600 text-white';
+
   // Filter consultas based on selected filters
   const filteredConsultas = consultas.filter((consulta) => {
     if (filterCategory !== "all" && consulta.category !== filterCategory) {
@@ -426,7 +431,10 @@ const Dashboard = () => {
                             {consulta.location}
                           </Badge>
                           {isAnalyst && (
-                            <Badge variant="secondary" className="gap-1 border border-secondary/50">
+                            <Badge
+                              variant="secondary"
+                              className={`gap-1 border px-2 py-0.5 text-xs font-semibold ${getOriginBadgeClasses(consulta.tipo_consulta)}`}
+                            >
                               Origem: {consulta.tipo_consulta === 'API' ? 'API' : 'N8N'}
                             </Badge>
                           )}

@@ -79,6 +79,11 @@ const ConsultaApi = () => {
     [termo, localizacao, isLimitValid]
   );
 
+  const calculateTokensForResults = (resultCount: number) => {
+    if (resultCount <= 0) return 0;
+    return Math.ceil(resultCount / 5);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) {
@@ -92,11 +97,14 @@ const ConsultaApi = () => {
     setIsSearching(true);
     try {
       // 1. Criar a consulta no banco
-      const consultaRes = await consultaService.createConsulta({
-        category: termo.trim(),
-        location: localizacao.trim(),
-        tipo_consulta: 'API'
-      });
+      const consultaRes = await consultaService.createConsulta(
+        {
+          category: termo.trim(),
+          location: localizacao.trim(),
+          tipo_consulta: 'API'
+        },
+        { cost: 0, skipTokenDebit: true }
+      );
 
       if (!consultaRes.success || !consultaRes.data) {
         throw new Error(consultaRes.error || "Erro ao criar consulta. Verifique seu saldo.");
@@ -116,6 +124,14 @@ const ConsultaApi = () => {
         website: item.site,
         rating: item.nota,
       }));
+
+      const tokensToCharge = calculateTokensForResults(mappedResults.length);
+      if (tokensToCharge > 0) {
+        const finalizeRes = await consultaService.finalizeConsultaTokens(consultaId, tokensToCharge);
+        if (!finalizeRes.success) {
+          throw new Error(finalizeRes.error || 'Falha ao debitar tokens da consulta');
+        }
+      }
 
       // 3. Salvar resultados no banco
       if (mappedResults.length > 0) {
@@ -144,6 +160,11 @@ const ConsultaApi = () => {
   const handleViewDetails = (consultaId: number) => {
     navigate(`/consulta/${consultaId}`);
   };
+
+  const getOriginBadgeClasses = (tipo?: string | null) =>
+    tipo === 'API'
+      ? 'border-blue-600 bg-blue-600 text-white'
+      : 'border-purple-600 bg-purple-600 text-white';
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -232,7 +253,10 @@ const ConsultaApi = () => {
                           {consulta.location}
                         </Badge>
                         {isAnalyst && (
-                          <Badge variant="secondary" className="gap-1 border border-secondary/50">
+                          <Badge
+                            variant="secondary"
+                            className={`gap-1 border px-2 py-0.5 text-xs font-semibold ${getOriginBadgeClasses(consulta.tipo_consulta)}`}
+                          >
                             Origem: {consulta.tipo_consulta === 'API' ? 'API' : 'N8N'}
                           </Badge>
                         )}

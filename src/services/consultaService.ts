@@ -34,6 +34,23 @@ export interface ConsultaStats {
 }
 
 class ConsultaService {
+  private calculateTokenUsage(
+    custotokens: number | string | null | undefined,
+    tipo_consulta?: string | null,
+    resultsCount?: number
+  ): number {
+    const numericTokens = Number(custotokens) || 0;
+    if (numericTokens > 0) {
+      return numericTokens;
+    }
+
+    if (tipo_consulta === 'API' && (resultsCount || 0) > 0) {
+      return Math.ceil((resultsCount || 0) / 5);
+    }
+
+    return 0;
+  }
+
   // Get all consultas with optional filters (with role-based access control)
   async getConsultas(filters?: ConsultaFilters): Promise<ApiResponse<Consulta[]>> {
     try {
@@ -116,14 +133,15 @@ class ConsultaService {
             .select('*', { count: 'exact', head: true })
             .eq('id_consulta', consulta.id_consulta);
 
+          const resultsCount = count || 0;
           const result: Consulta = {
             id: consulta.id_consulta,
             id_usuario: consulta.id_usuario,
             date: consulta.createdat,
             category: consulta.parametrocategoria,
             location: consulta.parametrolocalidade,
-            resultsCount: count || 0,
-            tokensUsed: consulta.custotokens,
+            resultsCount,
+            tokensUsed: this.calculateTokenUsage(consulta.custotokens, consulta.tipo_consulta, resultsCount),
             status: consulta.active ? 'Ativa' : 'Inativa',
             description: `${consulta.parametrocategoria} em ${consulta.parametrolocalidade}`,
             tipo_consulta: consulta.tipo_consulta,
@@ -226,14 +244,15 @@ class ConsultaService {
         .eq('id_consulta', data.id_consulta);
 
       // Transform data to match Consulta interface
+      const resultsCount = count || 0;
       const transformedData: Consulta = {
         id: data.id_consulta,
         id_usuario: data.id_usuario,
         date: data.createdat,
         category: data.parametrocategoria,
         location: data.parametrolocalidade,
-        resultsCount: count || 0,
-        tokensUsed: data.custotokens,
+        resultsCount,
+        tokensUsed: this.calculateTokenUsage(data.custotokens, data.tipo_consulta, resultsCount),
         status: data.active ? 'Ativa' : 'Inativa',
         description: `${data.parametrocategoria} em ${data.parametrolocalidade}`,
         tipo_consulta: data.tipo_consulta,
@@ -358,14 +377,15 @@ class ConsultaService {
             .select('*', { count: 'exact', head: true })
             .eq('id_consulta', consulta.id_consulta);
 
+          const resultsCount = count || 0;
           return {
             id: consulta.id_consulta,
             id_usuario: consulta.id_usuario,
             date: consulta.createdat,
             category: consulta.parametrocategoria,
             location: consulta.parametrolocalidade,
-            resultsCount: count || 0,
-            tokensUsed: consulta.custotokens,
+            resultsCount,
+            tokensUsed: this.calculateTokenUsage(consulta.custotokens, consulta.tipo_consulta, resultsCount),
             status: consulta.active ? 'Ativa' : 'Inativa',
             description: `${consulta.parametrocategoria} em ${consulta.parametrolocalidade}`,
           tipo_consulta: consulta.tipo_consulta,
@@ -388,7 +408,10 @@ class ConsultaService {
   }
 
   // Create a new consulta (with authenticated user)
-  async createConsulta(newConsulta: { category: string; location: string; tipo_consulta?: string | null }): Promise<ApiResponse<Consulta>> {
+  async createConsulta(
+    newConsulta: { category: string; location: string; tipo_consulta?: string | null },
+    options?: { cost?: number; skipTokenDebit?: boolean }
+  ): Promise<ApiResponse<Consulta>> {
     try {
       // Validate session first
       const sessionValidation = await authService.validateSession();
@@ -401,16 +424,18 @@ class ConsultaService {
 
       const currentUser = sessionValidation.data;
       const nowIso = new Date().toISOString();
-      const cost = 15;
+      const cost = Math.max(options?.cost ?? 15, 0);
 
-      const bal = await tokenService.getBalance(currentUser.id_usuario)
-      if (!bal.success || !bal.data || bal.data.tokens < cost) {
-        return { success: false, error: 'Saldo insuficiente' };
-      }
+      if (!options?.skipTokenDebit && cost > 0) {
+        const bal = await tokenService.getBalance(currentUser.id_usuario);
+        if (!bal.success || !bal.data || bal.data.tokens < cost) {
+          return { success: false, error: 'Saldo insuficiente' };
+        }
 
-      const deb = await tokenService.debitViaSupabase({ userId: currentUser.id_usuario, tokens: cost, source: 'consulta' })
-      if (!deb.success) {
-        return { success: false, error: deb.error || 'Falha ao debitar tokens' };
+        const deb = await tokenService.debitViaSupabase({ userId: currentUser.id_usuario, tokens: cost, source: 'consulta' });
+        if (!deb.success) {
+          return { success: false, error: deb.error || 'Falha ao debitar tokens' };
+        }
       }
 
       const { data, error } = await supabase
@@ -495,6 +520,70 @@ class ConsultaService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Erro ao salvar resultados'
+      };
+    }
+  }
+
+  async finalizeConsultaTokens(consultaId: number, tokensToCharge: number): Promise<ApiResponse<void>> {
+    try {
+      const sessionValidation = await authService.validateSession();
+      if (!sessionValidation.success || !sessionValidation.data) {
+        return { success: false, error: 'Usuário não autenticado' };
+      }
+
+      const currentUser = sessionValidation.data;
+      const { data: consulta, error } = await supabase
+        .from('consultas')
+        .select('id_usuario, custotokens')
+        .eq('id_consulta', consultaId)
+        .single();
+
+      if (error || !consulta) {
+        return { success: false, error: 'Consulta não encontrada' };
+      }
+
+      const isOwnerOrPrivileged =
+        consulta.id_usuario === currentUser.id_usuario ||
+        currentUser.perfil === 'admin' ||
+        currentUser.perfil === 'analista';
+
+      if (!isOwnerOrPrivileged) {
+        return { success: false, error: 'Acesso negado' };
+      }
+
+      const currentCost = consulta.custotokens || 0;
+      const normalizedTokens = Math.max(tokensToCharge, 0);
+      const tokensToDebit = Math.max(normalizedTokens - currentCost, 0);
+
+      if (tokensToDebit > 0) {
+        const debit = await tokenService.debitViaSupabase({
+          userId: consulta.id_usuario,
+          tokens: tokensToDebit,
+          source: 'consulta_api'
+        });
+
+        if (!debit.success) {
+          return { success: false, error: debit.error || 'Falha ao debitar tokens' };
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('consultas')
+        .update({
+          custotokens: normalizedTokens,
+          lastupdate: new Date().toISOString()
+        })
+        .eq('id_consulta', consultaId);
+
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro ao finalizar cobrança de tokens'
       };
     }
   }

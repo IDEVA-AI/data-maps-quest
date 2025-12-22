@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Search, History, CreditCard, Radar, Send, LogOut } from "lucide-react";
+import { Search, History, CreditCard, Radar, Send, LogOut, Info } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ const items = [
   { title: "Disparo", url: "/disparo", icon: Send },
   { title: "Histórico", url: "/history", icon: History },
   { title: "Recargas", url: "/tokens", icon: CreditCard },
+  { title: "Como Funciona", url: "/como-funciona", icon: Info },
 ];
 
 export function AppSidebar() {

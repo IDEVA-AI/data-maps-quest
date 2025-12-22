@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import TokenManagement from "./pages/TokenManagement";
+import ComoFunciona from "./pages/ComoFunciona";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import RegisterWithPlan from "./pages/RegisterWithPlan";
@@ -79,6 +80,11 @@ const App = () => (
             <Route path="/tokens" element={
               <ProtectedRoute>
                 <Layout><TokenManagement /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/como-funciona" element={
+              <ProtectedRoute>
+                <Layout><ComoFunciona /></Layout>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

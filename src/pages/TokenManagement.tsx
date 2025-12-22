@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,6 @@ import { downloadCSV, CSVColumn, validateCSVData, formatDateISO, formatCurrency 
 import { tokenService } from "@/services/tokenService";
 import { paymentService } from "@/services/paymentService";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 import { productService, Produto } from "@/services/productService";
@@ -32,20 +31,30 @@ const TokenManagement = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const { user } = useAuth();
   const [userTokens, setUserTokens] = useState<number>(0);
+  const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [products, setProducts] = useState<Produto[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [transactions, setTransactions] = useState<Transacao[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-  useEffect(() => {
-    const loadBalance = async () => {
-      if (user) {
-        const resp = await tokenService.getBalance(user.id_usuario)
-        if (resp.success && resp.data) setUserTokens(resp.data.tokens)
+  const refreshBalance = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsRefreshingBalance(true);
+      const resp = await tokenService.getBalance(user.id_usuario);
+      if (resp.success && resp.data) {
+        setUserTokens(resp.data.tokens);
+      } else {
+        toast.error("Erro ao atualizar saldo");
       }
+    } finally {
+      setIsRefreshingBalance(false);
     }
-    loadBalance()
-  }, [user])
+  }, [user]);
+
+  useEffect(() => {
+    refreshBalance();
+  }, [refreshBalance]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -224,7 +233,7 @@ const TokenManagement = () => {
         {/* Token Balance - Small */}
         <Card className="border-0 bg-gradient-hero shadow-card">
           <CardContent className="pt-4 pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">Saldo Atual de Tokens</p>
                 <Tooltip>
@@ -232,13 +241,23 @@ const TokenManagement = () => {
                     <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">Quantidade de tokens disponíveis para realizar consultas. Cada consulta consome 15 tokens.</p>
+                    <p className="max-w-xs">Tokens expiram em 2 meses. Atualize seu saldo sempre que fizer novas consultas.</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <p className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                {userTokens} tokens
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {userTokens} tokens
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refreshBalance}
+                  disabled={isRefreshingBalance || !user}
+                >
+                  {isRefreshingBalance ? "Atualizando..." : "Atualizar"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -304,34 +323,6 @@ const TokenManagement = () => {
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-
-        {/* Info Banner */}
-        <Card className="border-0 bg-gradient-hero shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <p className="mb-2">
-                Saldo: <span className="font-mono">{userTokens}</span> tokens
-              </p>
-              <Button variant="outline" size="sm" onClick={async () => {
-                if (user) {
-                  const resp = await tokenService.getBalance(user.id_usuario);
-                  if (resp.success && resp.data) setUserTokens(resp.data.tokens);
-                  else toast.error('Erro ao atualizar saldo');
-                }
-              }}>
-                Atualizar
-              </Button>
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-base font-semibold">
-                Cada consulta consome <span className="font-bold text-primary text-lg">15 tokens</span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Escolha o plano ideal para suas necessidades e aumente seu potencial de vendas
-              </p>
-            </div>
           </CardContent>
         </Card>
 
